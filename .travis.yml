@@ -9,7 +9,7 @@ install:
   - pip install codecov
 # command to run code
 script:
-  - python -m pytest --cov=qcMessenger
+  - python -m pytest --cov=pykapa
   - ./build_tools/flake_diff.sh
 after_success:
   - codecov 
