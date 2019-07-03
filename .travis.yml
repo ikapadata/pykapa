@@ -1,15 +1,14 @@
 language: python
+
 python:
   - "3.6"
-# command to install dependencies
+
 install:
   - pip install -r requirements.txt
-  - pip install flake8
-  - pip install pytest-cov
-  - pip install codecov
-# command to run code
+  - pip install pytest
+
 script:
-  - python -m pytest --cov=pykapa
-  - ./build_tools/flake_diff.sh
+  - py.test -v --color=yes --exitfirst --showlocals --durations=5
+
 after_success:
-  - codecov 
+  - python qcMessenger.py some args
