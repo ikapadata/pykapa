@@ -3,8 +3,8 @@ The preferred way to contribute to scitime is to fork the main repository on Git
 - Create an account on GitHub if you do not already have one.
 - Fork the project repository: click on the ‘Fork’ button near the top of the page. This creates a copy of the code under your account on the GitHub user account. 
 - Clone your fork of the scitime repo from your GitHub account to your local disk:
-```$ git clone git@github.com:YourLogin/scitime.git
-$ cd scitime
+```$ git clone git@github.com:YourLogin/pykapa.git
+$ cd pykapa
 # Install library in editable mode:
 $ pip install --editable .
 ```
