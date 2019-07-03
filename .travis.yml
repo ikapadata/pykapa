@@ -8,4 +8,4 @@ install:
   - pip install pytest
 
 script:
-  - pytest pykapa/qcMessenger.py
+  - pytest pykapa/qcMessenger.py --capture=no
