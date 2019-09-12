@@ -1,0 +1,14 @@
+version: '3'
+services:
+  pykapa:
+    image: pykapa:v0.1.1
+    build: .
+    command: python -m pykapa
+    build:
+      context: .
+      args:
+        google_sheet_url: ""
+        username: ""
+        password: ""
+        server: ""
+

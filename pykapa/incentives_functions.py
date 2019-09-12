@@ -1,8 +1,6 @@
-import requests
-from xls_functions import concat, format_date_time, evalfunc_str, is_in, now, uuid
+from pykapa.xls_functions import concat, format_date_time, evalfunc_str, is_in, now, uuid
 import json
 import requests
-import time
 import os
 import ast
 import pandas as pd

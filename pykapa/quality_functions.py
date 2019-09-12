@@ -1,20 +1,13 @@
-import requests
 from requests.auth import HTTPDigestAuth
-import json
 from oauth2client import file, client, tools
 import gspread
-import os
-import json
 import os.path
-from xls_functions import *
 from slackclient import SlackClient
-from incentives_functions import *
 import pytz
-import locale
-from locale import atof
 import pandas as pd
-import re
 import numpy as np
+from pykapa.xls_functions import *
+from pykapa.incentives_functions import *
 
 
 #--------------------------------------------------------------------------------------------------------------------------------
@@ -609,7 +602,9 @@ def qc_messenger(df_survey,df_xls, admin_channel = None):
 
             
 def qc_manager(google_sheet_url,username,password,server):
-    # create incentive database tables      
+    print(google_sheet_url, username, password, server)
+    return
+    # create incentive database tables
     excess_recharge_dir = make_relative_dir('data','db','recharges','excess_recharges.json') #.../data/db/recharges/excess_recharges.json
     create_json_db(excess_recharge_dir)
 
