@@ -6,11 +6,9 @@ before_script:
   - docker pull ikapa/pykapa:vbase || true
 script:
   - cat version | xargs -I {} docker build --pull --cache-from ikapa/pykapa:vbase -t pykapa:v{} .
-  - docker run myimage
 
 after_script:
   - docker images
-
 
 before_deploy:
   - docker login -u "sentientcode" -p "pykapa101"
