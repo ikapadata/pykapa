@@ -6,9 +6,4 @@ services:
     command: python -m pykapa
     build:
       context: .
-      args:
-        google_sheet_url: ""
-        username: ""
-        password: ""
-        server: ""
 

@@ -12,6 +12,7 @@ parser.add_argument('-s', '--server', help='server')
 
 if __name__ == '__main__':
     args = parser.parse_args()
+    print("Version 2")
     qc_manager(google_sheet_url=args.url,
                username=args.username,
                password=args.password,
