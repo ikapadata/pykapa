@@ -5,7 +5,7 @@ services:
 before_script:
   - docker pull ikapa/pykapa:vbase || true
 script:
-  - cat version | xargs -I {} docker build --pull --cache-from ikapa/pykapa:vbase -t ikapa/pykapa:v{} .
+  - cat version | xargs -I {} docker build --pull --cache-from sentientcode/pykapa:vbase -t sentientcode/pykapa:v{} .
 
 after_script:
   - docker images
@@ -16,6 +16,6 @@ before_deploy:
 
 deploy:
   provider: script
-  script: cat version | xargs -I {} docker push ikapa/pykapa:v{}
+  script: cat version | xargs -I {} docker push sentientcode/pykapa:v{}
   on:
     branch: docker
