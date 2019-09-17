@@ -3,7 +3,7 @@ services:
   - docker
 
 before_script:
-  - docker pull ikapa/pykapa:v0.1.1 || true
+  - docker pull sentientcode/pykapa:v0.1.1 || true
 script:
   - cat version | xargs -I {} docker build --pull --cache-from sentientcode/pykapa:v0.1.1 -t sentientcode/pykapa:v{} .
 
