@@ -42,7 +42,7 @@ if google_sheet_url != ''  and  email != '' and  password != '' and  server != '
     try:
         server_resp = requests.get(server)
     except:
-        err = err + '*SurveyCTO:* the link to your SurveyCTO server is invalid. Please enter a valid link to continue.\n'
+        err = err + '*SurveyCTO:* the server name or credentials are incorrect. Please enter correct details to continue.\n'
     
     # validate email input
     if not validators.email(email):
@@ -55,25 +55,19 @@ if google_sheet_url != ''  and  email != '' and  password != '' and  server != '
     
     else:
         
-        print('\nPydata has started tracking your data and will send alerts to your specified messenger app.')
+        print('\npykapa has started tracking your data and will send alerts to your specified messenger app.')
         while True:
             
             df_xls = df_xls_data(google_sheet_url, err_chnl)  # retrieve quality control and incentive data from xls form as a dictionary
-            df_incentive = df_xls['incentives']
-             
-            if str(df_xls) != str(None):
+            if df_xls is not None:
+                print(True)
                 df_survey = surveyCTO_download(server,email,password,df_xls['form_id'],err_chnl) # retrieve data from surveyCTO as dataframe
                  
-                if str(df_survey) != str(None):
-                    
+                if df_survey is not None:         
                     if df_survey.empty == False and list(df_survey)!= ['error']:
-                        df_survey = reduce_cols_in_surveyData(df_survey,df_xls) # only get cols relevant to messages, incentives, etc.
-                        
-                    qc_messenger(df_survey,df_xls,err_chnl) # perform quality control, post messages, and send incentives 
-                    # resend failed recharges
-                    if str(df_incentive) != str(None) and df_incentive.empty == False:
-                        for idx in df_incentive.index.values:    
-                            project_recharge_failed(api_key = df_incentive.loc[idx,'flickswitch_api_key'], project = df_xls['form_id'], recharge_limit = int(df_incentive.loc[idx,'recharge_count']) , prodType = str(df_incentive.loc[idx,'incentive_type']))
+                        df_surv = reduce_cols_in_surveyData(df_survey,df_xls) # only get cols relevant to messages, incentives, etc.
+                        qc_messenger(df_surv,df_xls,err_chnl,google_sheet_url ) # perform quality control, post messages, and send incentives          
+
                 else:
                     break
             else:

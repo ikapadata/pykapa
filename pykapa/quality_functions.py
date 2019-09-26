@@ -15,7 +15,9 @@ from locale import atof
 import pandas as pd
 import re
 import numpy as np
-
+from gspread_dataframe import *
+from pprint import pprint
+from googleapiclient import discovery
 
 #--------------------------------------------------------------------------------------------------------------------------------
 #                                                      XLS Form functions
@@ -28,7 +30,7 @@ def df_worksheet(worksheet):
 # open google sheet from specified url string
 def open_google_sheet(google_sheet_url): 
     # Type of action
-    SCOPES = 'https://www.googleapis.com/auth/spreadsheets.readonly'
+    SCOPES = 'https://www.googleapis.com/auth/spreadsheets'
     # Authentication for Google Docs
     store = file.Storage(make_relative_dir('data','authentication','google','token.json'))
     creds = store.get()
@@ -119,23 +121,6 @@ def xls2py(dataframe):
     
     return dataframe
 
-# form an incentives dataframe with new columns
-def df_full_incentive(df_incentive):
-    df_vec = df_incentive.loc[ df_incentive.index.values[0],'survey_variables'].split(',')
-    del df_incentive['survey_variables'] # delete column
-    
-    #add cloumns
-    df_incentive['status'] = str(np.NaN)
-    df_incentive['comment'] = str(np.NaN)
-    df_incentive['reference_key'] = str(np.NaN)
-    df_incentive['timestamp'] = str(np.NaN)
-    
-    for item in df_vec:
-        #print(item)
-        item_str = get_substring('var{','}', item)
-        df_incentive[item_str] = item.strip()
-    
-    return df_incentive 
 
 # retrieve relevant data from google sheet
 def df_xls_data(google_sheet_url, err_chnl = None):
@@ -146,7 +131,7 @@ def df_xls_data(google_sheet_url, err_chnl = None):
         ws_choices =  google_sheet.worksheet('choices')                 # Open the worksheet named choices
         ws_set = google_sheet.worksheet('settings')                     # Open the worksheet named settings
     except Exception as error:
-        #error =  '`ConnectionError:`\n*GoogleSheet: * the link is invalid or missing worksheets (survey, choices, settings). Please correct the mistake to continue.\n'
+        error =  '`ConnectionError:`\n*GoogleSheet: * the link is invalid or missing worksheets (survey, choices, settings). Please correct the mistake to continue.\n'
         slack_post(str(err_chnl),error) # send message to slack
         return None
     
@@ -236,14 +221,35 @@ def df_xls_data(google_sheet_url, err_chnl = None):
                 df_svy.loc[i,'list_name'] = vec[1] # assign second string to list_name
                 
         #create dataframe with only 3 columns to reference types
-        df_select = df_svy[['type','list_name','name']]
+        sel_cols = ['type','list_name','name','dashboard_state']
+        try:
+            df_select = df_svy[sel_cols]
+        except:
+            df_select = df_svy[sel_cols[0:3]]
+            
         # 5. obtain form_id of worksheet
         form_id = df_set_xls.loc[0,'form_id']
         
         
-        if str(err_chnl) != str(None):
+        # create dashboard header
+        try:
+            db_sel  = df_select[df_select.dashboard_state == 'TRUE'] # dashboard dataframe
+            db_msg  = df_msg[df_msg.dashboard_state == 'TRUE'] # dashboard dataframe
+            db_head =list(dict.fromkeys( list(db_msg['name']) + list(db_sel['name']) ))
+            
+        except:
+            db_head = None
+        
+        # create dashboard dataframe and create worksheet
+        if db_head is not None:
+            db = pd.DataFrame(columns = db_head)
+            
+        else:
+            db = None
+      
+        if err_chnl is not None:
         # Post error messages on slack for missing optional sheets
-            if str(df_msg) != str(None) and df_msg.empty == False:
+            if df_msg is not None and df_msg.empty == False:
                 #df_msg = df_msg.replace('nan',np.NaN)
                 df = df_msg[df_msg.channel_name == 'nan']
                 if len(df) != 0:
@@ -256,7 +262,7 @@ def df_xls_data(google_sheet_url, err_chnl = None):
                 slack_post(err_chnl,err)
                 return None
             
-            elif str(df_incentive) != str(None) and df_incentive.empty == False:
+            elif df_incentive is not None and df_incentive.empty == False:
                 # check if there are missing cells and delete the row with any missing cell
                 df_incentive = df_incentive.replace('nan',np.NaN).dropna()
                 if df_incentive.empty == True:
@@ -264,8 +270,7 @@ def df_xls_data(google_sheet_url, err_chnl = None):
                     slack_post(err_chnl,err)
                     return None
 
-
-    return {'messages': df_msg, 'incentives':df_incentive, 'form_id':form_id, 'select':df_select, 'choices':df_choices}
+    return {'messages': df_msg, 'incentives':df_incentive, 'form_id':form_id, 'select':df_select, 'choices':df_choices,'dashboard':db}
 
 # relative directory to script
 def relative_dir(folder, file):
@@ -310,7 +315,7 @@ def surveyCTO_link(server,form_id, dirX):
             
     else:
         f = open(dirX,"w+")
-        json.dump({'StartDate': '','CompletionDate':'','KEY':'', 'failedRecharges': [], 'finalTrial':[]}, f) # write to json file
+        json.dump({'StartDate': '','CompletionDate':'','KEY':'', 'ExportTime':'','failedRecharges': [], 'finalTrial':[]}, f) # write to json file
         f.close()
         
         svy_url = server + '/api/v1/forms/data/wide/json/' + form_id
@@ -325,7 +330,7 @@ def surveyCTO_link(server,form_id, dirX):
 def surveyCTO_response(server,username,password,form_id):
     Dir = make_relative_dir( 'data', form_id,'')
     dirX = concat(Dir, 'qctrack.json')
-    #print(dirX)
+    print('dirTrack: ',dirX)
     if not os.path.exists(Dir):
         os.makedirs(Dir)
     #create surveyCTO link
@@ -393,9 +398,15 @@ def reduce_cols_in_surveyData(df_survey,df_xls):
                                 lst.append(item)
                             except Exception as err:
                                 error = err
+                                
+        elif key == 'dashboard' and str(df) != str(None):
+            
+            for el in df_survey.columns:
+                if el in df.columns:
+                    lst.append(el)
+  
     # remove duplicates
-    lst = list(dict.fromkeys(lst))
-    
+    lst = list(dict.fromkeys( lst ))
     return df_survey[lst]
 
 
@@ -413,33 +424,38 @@ def slack_post(channel_name, slack_msg):
 #--------------------------------------------------------------------------------------------------------------------------------
 
 # evaluate conditions and post messages to channel    
-def control_messenger(df_msg,df_xls,err_chnl=None):
+def control_messenger(df_msg,df_xls,err_chnl=None,df_dashboard=None):
     # list of unique channel names
     df_msg = df_msg.sort_values(by=['channel_id'])
     lst = df_msg.drop_duplicates(subset='channel_name', keep ='first')['channel_name']
-    nan = 'nan'
+    nan = 'nan'    
     for chnl in lst:
         msg = ''
         error = ''
         dfx = df_msg.loc[df_msg['channel_name'] == chnl] # filter by channel name
         for index in dfx.index.values:
+            # determine column type
             
             #print('cm_idx: ',index)
-            msg_label = evalfunc_str(dfx.loc[index,'message_label'].replace('""',''),df_xls)
+            msg_label = evalfunc_str(str(dfx.loc[index,'message_label']).replace('""',''),df_xls)
+            #print('row: ', index +2,'msg_rel:', dfx.loc[index,'message_relevance'],' msg_label: ', dfx.loc[index,'message_label'] )
             msg_rel = evalfunc_str(dfx.loc[index,'message_relevance'],df_xls)
             
             header = evalfunc_str(dfx.loc[index,'message_header'],df_xls)
             messenger = dfx.loc[index,'messenger']
-            
-            
+            col = dfx.loc[index,'name']
+
             try:
-                if msg_rel != 'nan' and eval(msg_rel)==True:
-                    msg = msg + msg_label +'\n'
+                if msg_rel != 'nan' and eval(str(msg_rel))==True:
+                    msg = msg + msg_label + '\n'
                     
+                    value = 1
+                    df_dashboard = dashboard(df_dashboard,col,value)
+
             except Exception as exceptErr:
                 index += 2
                 msg_rel = msg_rel.replace('var{','${')
-                err = '\n`row:` '+str(index) + '\t `message relevance:` '+ msg_rel.replace('==','=')+ '\t `error message:` ' + str(exceptErr)
+                err = '\n`row:` '+str(index) + '\t `message relevance:` '+ str(msg_rel).replace('==','=')+ '\t `error message:` ' + str(exceptErr)
                 error = concat(error, err)
         
         chnl = chnl.replace('""','')
@@ -448,15 +464,15 @@ def control_messenger(df_msg,df_xls,err_chnl=None):
         if msg !='' or error !='':
             #print('channel: ',chnl,'\nmsg: \n', msg)
             if messenger.lower() == 'slack':
-                slack_msg = header +'\n'+ msg + error
+                slack_msg = header +'\n'+ msg
                 slack_msg = slack_msg.replace('""','')
                 slack_msg = slack_msg.replace('"','')
 
-                print('\nMessage channel: ', chnl)
+                #print('\nMessage channel: ', chnl)
                 slack_post(chnl.lower(), slack_msg.replace('nan',''))
+                
                
-       
-        if error !='':
+      
             #print('channel: ',chnl,'\nmsg: \n', msg)
             if messenger.lower() == 'slack':
                 error = '`Syntax error(s):`\nMake sure xls names ( i.e ${name} ) in the *messages* worksheet exists, spelled correctly, or the same type is compared in the following:\n' + error
@@ -466,8 +482,10 @@ def control_messenger(df_msg,df_xls,err_chnl=None):
                    
                 chnl = chnl.replace('""','')
                 chnl = chnl.replace('"','')
-                print('\nSyntax channel: ', chnl)
+                #print('\nSyntax channel: ', err_chnl)
                 slack_post(err_chnl.lower(), slack_synt.replace('nan',''))
+    return df_dashboard
+
 
 #convert UTC to SAST timezone
 def timezone_sast(date_str):
@@ -479,11 +497,13 @@ def timezone_sast(date_str):
     return  utc_dt.astimezone(jhb).strftime(fmt)
 
 # quality contorl and messenger (populate xls control variables with data from survey cto )
-def qc_messenger(df_survey,df_xls, admin_channel = None):
+def qc_messenger(df_survey,df_xls, admin_channel = None, google_sheet_url=None):
     form_id = df_xls['form_id']
     dirX = make_relative_dir('data', form_id, 'qctrack.json') # directory to json file to store the last record
-
+    print(dirX)
     if df_survey.empty == False and list(df_survey)!= ['error']:
+    
+        
         print('\nQC STARTED')
         df_select = df_xls['select']
         df_choices = df_xls['choices']
@@ -497,19 +517,23 @@ def qc_messenger(df_survey,df_xls, admin_channel = None):
             date_old = date_time(qc_track['CompletionDate']) # date from the JSON file that stores the last record
             
             df_survey =  df_survey[df_survey.CompletionDate > date_old]
-            print('recs: ',len(df_survey),'\n')
+        
+        print('recs: ',len(df_survey),'\n')
             
         #Convert number strings with commas in pandas DataFrame to float
         decmark_reg = re.compile('(?<=\d),(?=\d)')
         
-        
-        if str(df_xls['messages']) != str(None) and df_xls['messages'].empty == False:
+        if df_xls['messages'] is not None and df_xls['messages'].empty == False:
         
             for i in df_survey.index.values:
     
                 # sort messages in ascending order of channel IDs
                 df_msg = df_xls['messages'].sort_values('channel_id',ascending=True)
-                df_incentive = df_xls['incentives']
+            
+                df_incentive = deepcopy(df_xls['incentives'])
+                df_dashboard = deepcopy(df_xls['dashboard'])
+
+                
                 for col in df_survey: 
                     # format values from respondent
                     val = df_survey.loc[i,col] # read value from respondent
@@ -518,33 +542,51 @@ def qc_messenger(df_survey,df_xls, admin_channel = None):
                         val = str(val)
 
                     value = decmark_reg.sub('.',val) # change decimal point from a comma (,) to a period (.)
-
-                    #convert UTC to SAST timezone
-                    if date_check(value)==True and is_number(value)==False:
-                        value = timezone_sast(value)
-                    elif is_number(value) == False:
-                        value = '"""'+value+ '"""'
-
-
+                    
+                    # determine column type
+                    try:
+                        colType = df_xls['select'].loc[df_xls['select'][df_xls['select'].name == col].index.values[0],'type']
+                    except:
+                        colType = None
+                    
+                    # format value
+                    if str(colType) != 'select_multiple':
+                            # convert UTC to SAST timezone
+                        if date_check(value)== True and is_number(value)==False:
+                            value = timezone_sast(value)
+                            # format strings to cater for multiple lines
+                        elif is_number(value) == False:
+                            value = '"""' + value + '"""'
+                        elif value.isdigit():
+                            value = int(value)
+                    else:
+                        value = '"""' + value + '"""'
+                        
+                    
+                    # populate dashboard dataframe
+                    df_dashboard = dashboard(df_dashboard,col,value,colType,df_xls)
+                    
+                    
                     # populate xls variables with data from surveyCTO
-                    df_msg = df_msg.replace('var{'+col+'}',value, regex = True) # messages
+                    df_msg = df_msg.replace('var{'+col+'}',str(value), regex = True) # messages
                     df_msg = df_msg.replace('col{'+col+'}',col, regex = True) # messages
                         
-                    if str(df_incentive) != str(None):
-                        df_incentive = df_incentive.replace('var{'+col+'}',value, regex = True) # incentives
+                    if df_incentive is not None:
+                        df_incentive = df_incentive.replace('var{'+col+'}',str(value), regex = True) # incentives
                         df_incentive = df_incentive.replace('col{'+col+'}',col, regex = True) # incentives
 
 
                 # evaluate quality control conditions and post messages on channels
-                control_messenger(df_msg,df_xls, admin_channel)
-              
-                    
+                df_db = control_messenger(df_msg,df_xls, admin_channel,df_dashboard)            
+                
+
                 # ----------------- send incentives -------------
-                if str(df_incentive) != str(None) and df_incentive.empty == False:
+                if df_incentive is not None and df_incentive.empty == False:
 
                     for idx in df_incentive.index.values:
                         # recharge details
-                        msisdn  = evalfunc_str(str(df_incentive.loc[ idx,'contact']),df_xls)
+                        msisdn  = simcontact(evalfunc_str(str(df_incentive.loc[ idx,'contact']),df_xls))
+                        #print('xlsContact: ',msisdn, ' simContact: ', simcontact(msisdn) )
                         api_key = evalfunc_str(str(df_incentive.loc[ idx,'flickswitch_api_key']),df_xls)
                         r_count = int(float(evalfunc_str(str(df_incentive.loc[ idx,'recharge_count']), df_xls)))
                         network = evalfunc_str(str(df_incentive.loc[ idx,'network']), df_xls)
@@ -557,14 +599,14 @@ def qc_messenger(df_survey,df_xls, admin_channel = None):
                             df_rec = msisdn_history(api_key, msisdn, prodType = prod_type) # check history
                             print('msisdn: ',msisdn, ' hist: ', len(df_rec) )
                             
-                            if str(df_rec) != 'None' and len(df_rec)!=0 and type(df_rec)!= list:
+                            if df_rec is not None and len(df_rec)!=0 and type(df_rec)!= list:
                                 print('idx: ', idx,' type: ', prod_type,  ' msisdn: ', df_rec.loc[0,'msisdn'],' status: ',df_rec.loc[0,'status'],'\n' )
                                 #s_rec = df_rec[df_rec['reference'].str.contains(form_id) & df_rec['status'].str.contains('SUCCESS')] # records of successful recharges in the given project
                                 #f_rec = df_rec[df_rec['reference'].str.contains(form_id) & df_rec['status'].str.contains('FAILED')]  # records of FAILED recharges in the given project
                                 s_rec = df_rec[df_rec['status'].str.contains('SUCCESS')] # records of successful recharges in the given project
                                 f_rec = df_rec[df_rec['status'].str.contains('FAILED')]  # records of FAILED recharges in the given project
                                         
-                            elif str(df_rec) == 'None':
+                            elif df_rec is None:
                                 s_rec = None
                                 f_rec = None
                             else:
@@ -572,12 +614,12 @@ def qc_messenger(df_survey,df_xls, admin_channel = None):
                                 f_rec = []
                             
                             # recharge msisdn
-                            if str(s_rec) != str(None) and str(f_rec) != str(None):
+                            if s_rec is not None and f_rec is not None:
                                 if len(s_rec) < r_count and len(f_rec) <= 1: 
                                     print('Buying',prod_type, 'for msisdn: ', msisdn, '(', network,')')
                                     
                                     recharge = rechargeSim(api_key = api_key, msisdn = msisdn , network = network, prodType = prod_type, bundleSize = amount, price = amount, ref = concat(key,'_', form_id,'_', len(f_rec)+1))
-                                    if str(recharge) != str(None) and recharge.empty == False:
+                                    if recharge is not None and recharge.empty == False:
                                         print('STATUS: ', recharge['status'],'\n')
                                         # read the tracking json file 
                                         qc_track = read_json_file(dirX)
@@ -603,11 +645,14 @@ def qc_messenger(df_survey,df_xls, admin_channel = None):
                 if qc_track['StartDate'] == '' and i == 0:
                     qc_track['StartDate'] = date_new
     
-                print(qc_track)
-                write_to_json(dirX, qc_track) # record the last checked interview in json file
-
-
-            
+                print('\n',qc_track)
+                write_to_json(dirX, qc_track) # record the last checked interview in json fileq               
+                to_google_sheet(df_dashboard = df_db, google_sheet_url = google_sheet_url)
+    
+    return True
+                
+                
+                
 def qc_manager(google_sheet_url,username,password,server):
     # create incentive database tables      
     excess_recharge_dir = make_relative_dir('data','db','recharges','excess_recharges.json') #.../data/db/recharges/excess_recharges.json
@@ -631,4 +676,157 @@ def coltype(col, df_select):
     coltype = row.loc[row.index.values[0],'type']
     return coltype      
 
+# create new worksheet
+def new_worksheet(google_sheet,ws_title):
+    try:
+        dashboardSheet = google_sheet.add_worksheet(title=ws_title, rows="1", cols="2")
+        err = None
+        return err
+    except Exception as err:
+        err = 'Worksheet already exists.'
+        return err
 
+def dataframe_to_worksheet(google_sheet, ws_title, df_data):
+    # read worksheet
+    ws_dashboard = google_sheet.worksheet(ws_title)
+    # convert worksheet to dataframe
+
+        #df_dashboard = df_worksheet(ws_dashboard)
+    df_dashboard = get_as_dataframe(ws_dashboard, evaluate_formulas=False)
+    
+    # write to worksheet 
+    len_db = len(df_dashboard)
+    print('l_db: ', len_db)
+
+    if len_db == 0:
+        set_with_dataframe(ws_dashboard,df_data)
+    # append data to existing data
+    else:
+        try:
+            #df_append = df_dashboard.append(df_data,sort=False)
+            #print('\ndashboardHeader: \n',df_append.columns)
+            df_append = pd.concat([df_dashboard,df_data], sort = False)
+            
+            time.sleep(1.5) # sleep for 1 sec
+            set_with_dataframe(ws_dashboard, df_append, allow_formulas=True)
+        except Exception as err:
+            print(err)
+        
+ # dashboard       
+def dashboard(df_dashboard,col,value,colType= None,df_xls=None):
+    if df_dashboard is not None and col in list(df_dashboard):
+        if type(value) == str:
+            try:
+                value = get_substring('"""', '"""', value)
+            except:
+                x = None
+                
+        if str(colType) == 'select_one' and str(value) != 'nan':
+            #print('db: ',value)
+            if str(value).isdigit():
+                value = int(value)
+            df_dashboard.loc[0,col] = jr_choice_name(value,col,df_xls)
+           # print('value: ', value, ' col: ', col, ' jr: ', jr_choice_name(value,col,df_xls))
+            
+        elif str(colType) == 'select_multiple':
+            lst = []
+
+            for val in value.split(' '):
+                
+                try:
+                    val = int(str(val))
+                except Exception as err:
+                    err = err
+                    
+                lst.append(jr_choice_name(val,col,df_xls))
+ 
+            df_dashboard.at[0,col] = str(lst)
+            print('new_val: ', lst, 'old_val: ', value, 'col: ', col)
+            #lst_vals = value.split(' ')    
+        else:
+            df_dashboard.loc[0,col] = value
+
+    return df_dashboard
+
+
+# write to dashboard
+def to_google_sheet(df_dashboard, google_sheet_url, ws_title = 'dashboard'):
+    #t0 = now()
+    # open google sheet
+    gsheet = open_google_sheet(google_sheet_url)
+    wks = gsheet.worksheets()
+    
+    ws_name = "'" + ws_title + "'"
+    
+    if  ws_name not in str(wks):
+    # create or read dashboard worksheet
+    # create sheet if sheet does not exist, then write to sheet
+        ws_db = gsheet.add_worksheet(title = ws_title, rows = str(100000), cols = len(list(df_dashboard))) # create worksheet
+        set_with_dataframe(ws_db, df_dashboard)
+        return False
+        
+    # sheet exists so read, then write to sheet
+    else:
+        # number of rows in dashboard
+        
+        # read worksheet
+        ws_db = gsheet.worksheet(ws_title)
+        index = len(ws_db.get_all_records()) + 2
+        # get headers
+        ws_head = ws_db.row_values(1)
+        
+        df_e = pd.DataFrame( columns = list( set(ws_head).difference( list(df_dashboard) ) ) )
+        df_DB = pd.concat([df_e,df_dashboard]).replace(np.nan, '', regex=True)[ws_head]
+        df_DB = df_DB.astype(str)
+        print(df_DB)
+        # Convert data frame to a list of lists
+        row = list(df_DB.iloc[0])
+        #print(row)
+            
+            
+        ws_db.insert_row(row, index)
+        
+        return True
+
+
+
+# write to googlesheet using Google API
+def to_gsheet_api(spreadsheet_id, range_, value_input_option, data):
+    # TODO: Change placeholder below to generate authentication credentials. See
+    # https://developers.google.com/sheets/quickstart/python#step_3_set_up_the_sample
+    #
+    # Authorize using one of the following scopes:
+    #     'https://www.googleapis.com/auth/drive'
+    #     'https://www.googleapis.com/auth/drive.file'
+    #     'https://www.googleapis.com/auth/spreadsheets'
+    
+    credentials = None
+    
+    service = discovery.build('sheets', 'v4', credentials=credentials)
+    '''
+    # The ID of the spreadsheet to update.
+    spreadsheet_id = 'my-spreadsheet-id'  # TODO: Update placeholder value.
+    
+    # The A1 notation of the values to update.
+    range_ = 'my-range'  # TODO: Update placeholder value.
+    
+    # How the input data should be interpreted.
+    #value_input_option = ''  # TODO: Update placeholder value.
+    '''
+    
+    value_range_body = {
+        # TODO: Add desired entries to the request body. All existing entries
+        # will be replaced.
+        data
+    }
+    
+    request = service.spreadsheets().values().update(spreadsheetId=spreadsheet_id, range=range_, valueInputOption=value_input_option, body=value_range_body)
+    response = request.execute()
+    
+    # TODO: Change code below to process the `response` dict:
+    pprint(response)
+            
+            
+            
+        
+        
