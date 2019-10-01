@@ -1,23 +1,26 @@
-import requests
-from requests.auth import HTTPDigestAuth
 import json
-from oauth2client import file, client, tools
 import gspread
 import os
-import json
 import os.path
-from xls_functions import *
-from slackclient import SlackClient
-from incentives_functions import *
+import json
+import requests
 import pytz
 import locale
-from locale import atof
+import numpy as np
 import pandas as pd
 import re
-import numpy as np
+import unicodedata
+
+from requests.auth import HTTPDigestAuth
+from xls_functions import *
+from incentives_functions import *
+from slackclient import SlackClient
+from oauth2client import file, client, tools
+from locale import atof
 from gspread_dataframe import *
 from pprint import pprint
 from googleapiclient import discovery
+
 
 #--------------------------------------------------------------------------------------------------------------------------------
 #                                                      XLS Form functions
@@ -370,12 +373,11 @@ def surveyCTO_download(server,username,password,form_id, err_chnl = None):
     elif status != 200 and status != 401 and df_json.empty == False:
         err = '`SurveyCTO Error: (' + str(status) + ')`\n' + df_json.loc['message','error']
         slack_post(str(err_chnl),err) # post message on slack
-        
-    
-    if len(list(df_json))>1:
+         
+    if len(list(df_json)) > 1:
         # convert string to datetime
         df_json['CompletionDate'] = pd.to_datetime(df_json['CompletionDate'])
-        df_json = df_json.sort_values(by=['CompletionDate'])# sort values in ascending order of CompletionDate
+        df_json = df_json.sort_values(by=['CompletionDate']) # sort values in ascending order of CompletionDate
 
     return df_json.replace('', str(np.NaN))
 
@@ -496,11 +498,12 @@ def timezone_sast(date_str):
     jhb = pytz.timezone('Africa/Johannesburg')
     return  utc_dt.astimezone(jhb).strftime(fmt)
 
-# quality contorl and messenger (populate xls control variables with data from survey cto )
-def qc_messenger(df_survey,df_xls, admin_channel = None, google_sheet_url=None):
+# quality contorl and messenger (populate xls control variables with data from surveyCTO)
+def qc_messenger(df_survey,df_xls,qc_track, admin_channel = None, google_sheet_url=None):
+    
     form_id = df_xls['form_id']
-    dirX = make_relative_dir('data', form_id, 'qctrack.json') # directory to json file to store the last record
-    print(dirX)
+    dirX = make_relative_dir('data', form_id, 'qctrack.json')
+    
     if df_survey.empty == False and list(df_survey)!= ['error']:
     
         
@@ -508,15 +511,6 @@ def qc_messenger(df_survey,df_xls, admin_channel = None, google_sheet_url=None):
         df_select = df_xls['select']
         df_choices = df_xls['choices']
         
-        # read the tracking json file and filter by last tracked date
-        qc_track = read_json_file(dirX)
-        if qc_track['CompletionDate'] != '':
-            if type(qc_track['CompletionDate']) == str:
-                df_survey['CompletionDate'] = pd.to_datetime(df_survey['CompletionDate'])
-            
-            date_old = date_time(qc_track['CompletionDate']) # date from the JSON file that stores the last record
-            
-            df_survey =  df_survey[df_survey.CompletionDate > date_old]
         
         print('recs: ',len(df_survey),'\n')
             
@@ -577,7 +571,7 @@ def qc_messenger(df_survey,df_xls, admin_channel = None, google_sheet_url=None):
 
 
                 # evaluate quality control conditions and post messages on channels
-                df_db = control_messenger(df_msg,df_xls, admin_channel,df_dashboard)            
+                df_db = control_messenger(df_msg, df_xls, admin_channel, df_dashboard)            
                 
 
                 # ----------------- send incentives -------------
@@ -749,84 +743,71 @@ def dashboard(df_dashboard,col,value,colType= None,df_xls=None):
     return df_dashboard
 
 
-# write to dashboard
 def to_google_sheet(df_dashboard, google_sheet_url, ws_title = 'dashboard'):
-    #t0 = now()
-    # open google sheet
-    gsheet = open_google_sheet(google_sheet_url)
-    wks = gsheet.worksheets()
+    t0 = now()
+    # open google sheet and get worksheets
+    gsheet = open_google_sheet(google_sheet_url) # open google sheet using url
+    wks = gsheet.worksheets() #  list of sheet names
     
     ws_name = "'" + ws_title + "'"
     
-    if  ws_name not in str(wks):
+    if ws_name not in str(wks):
     # create or read dashboard worksheet
     # create sheet if sheet does not exist, then write to sheet
         ws_db = gsheet.add_worksheet(title = ws_title, rows = str(100000), cols = len(list(df_dashboard))) # create worksheet
         set_with_dataframe(ws_db, df_dashboard)
         return False
-        
+    
     # sheet exists so read, then write to sheet
     else:
-        # number of rows in dashboard
-        
         # read worksheet
-        ws_db = gsheet.worksheet(ws_title)
-        index = len(ws_db.get_all_records()) + 2
+        
+        ws_db = gsheet.worksheet(ws_title) # open worksheet 
+        # read worksheet in dataframe
+        #df_ws = get_as_dataframe(ws_db).dropna(how='all').astype(str)
+        recs = ws_db.get_all_records()
+        index = len(recs) + 2
+
         # get headers
-        ws_head = ws_db.row_values(1)
+        if recs != []:
+            ws_head = list(recs[0].keys()) # get headers
         
-        df_e = pd.DataFrame( columns = list( set(ws_head).difference( list(df_dashboard) ) ) )
-        df_DB = pd.concat([df_e,df_dashboard]).replace(np.nan, '', regex=True)[ws_head]
-        df_DB = df_DB.astype(str)
-        print(df_DB)
-        # Convert data frame to a list of lists
-        row = list(df_DB.iloc[0])
-        #print(row)
+            #print('db_cols = %s',ws_head)
             
+            df_e = pd.DataFrame( columns = list( set(ws_head).difference( list(df_dashboard) ) ) )
+            df_DB = pd.concat([df_e,df_dashboard], sort = False).replace(np.nan, '', regex=True)[ws_head]
+            #df_DB = pd.concat([df_e,df_dashboard], sort = False).replace('nan', '', regex=True)[ws_head]
+            df_DB = df_DB.astype(str)
             
-        ws_db.insert_row(row, index)
+            # Convert data frame to a list
+            row = df_DB.iloc[0].values.tolist() # convert row to list
+            ws_db.insert_row(row, index) # write list to worksheet
+        else:
+            set_with_dataframe(ws_db, df_dashboard)
         
+        #print('\nELSE: %s' % (now() - t0))
         return True
 
+# write to stata (dta) file
+def to_dta(df_json, filepath):
 
+    if os.path.isfile(filepath):
+        # read data from the old dta file
+        df_dta = pd.read_stata(filepath)
+        # append new data to old data
+        data = df_dta.append(df_json, sort = False)[list(df_json)]
+        # drop duplicates
+        data =  data.drop_duplicates(subset = ['KEY'])
+    else:
+        data = df_json
 
-# write to googlesheet using Google API
-def to_gsheet_api(spreadsheet_id, range_, value_input_option, data):
-    # TODO: Change placeholder below to generate authentication credentials. See
-    # https://developers.google.com/sheets/quickstart/python#step_3_set_up_the_sample
-    #
-    # Authorize using one of the following scopes:
-    #     'https://www.googleapis.com/auth/drive'
-    #     'https://www.googleapis.com/auth/drive.file'
-    #     'https://www.googleapis.com/auth/spreadsheets'
-    
-    credentials = None
-    
-    service = discovery.build('sheets', 'v4', credentials=credentials)
-    '''
-    # The ID of the spreadsheet to update.
-    spreadsheet_id = 'my-spreadsheet-id'  # TODO: Update placeholder value.
-    
-    # The A1 notation of the values to update.
-    range_ = 'my-range'  # TODO: Update placeholder value.
-    
-    # How the input data should be interpreted.
-    #value_input_option = ''  # TODO: Update placeholder value.
-    '''
-    
-    value_range_body = {
-        # TODO: Add desired entries to the request body. All existing entries
-        # will be replaced.
-        data
-    }
-    
-    request = service.spreadsheets().values().update(spreadsheetId=spreadsheet_id, range=range_, valueInputOption=value_input_option, body=value_range_body)
-    response = request.execute()
-    
-    # TODO: Change code below to process the `response` dict:
-    pprint(response)
-            
-            
-            
+    # encode data in ascii
+    for col in list(data):
+        data[col] = data[col].apply(lambda val: unicodedata.normalize('NFKD', str(val)).encode('ascii', 'ignore').decode('utf-8'))
+
+    # write to dta file
+    data.to_stata( filepath, encoding = 'ascii', version = 117, write_index = False )
+
+    return data
         
         
