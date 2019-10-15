@@ -59,38 +59,41 @@ if google_sheet_url != ''  and  email != '' and  password != '' and  server != '
         while True:
             
             df_xls = df_xls_data(google_sheet_url, err_chnl)  # retrieve quality control and incentive data from xls form as a dictionary
-            form_id = df_xls['form_id']
             
             if df_xls is not None:
                 print(True)
+                form_id = df_xls['form_id']
                 
+                df_msg = df_xls['messages']
+
+
                 df_survey = surveyCTO_download(server,email,password,form_id,err_chnl) # retrieve data from surveyCTO as dataframe
-                
-                
-               
-                
-                if df_survey is not None:  
-                    
-                    # read json tracker
-                    dir_x = make_relative_dir('data', form_id, 'qctrack.json')
-                    qc_track = read_json_file(dir_x)
-                    
-                    if qc_track['CompletionDate'] != '':
-                        if type(qc_track['CompletionDate']) == str:
-                            df_survey['CompletionDate'] = pd.to_datetime(df_survey['CompletionDate'])
-                        
-                        date_old = date_time(qc_track['CompletionDate']) # date from the JSON file that stores the last record
-                        df_survey =  df_survey[ df_survey.CompletionDate > date_old ] 
 
-
-                    # store data in stata file
-                    filename = '%s.dta' % form_id
-                    file = make_relative_dir('data', form_id, filename)
-                    
-                    df_survey.columns = df_survey.columns.str.replace("[-]", "_")
-                    data = to_dta(df_json = df_survey, filepath = file )
+                if df_survey is not None: 
                     
                     if df_survey.empty == False and list(df_survey)!= ['error']:
+                        # read json tracker
+                        print('len(df_survey): %s'%len(df_survey))
+                        dir_x = make_relative_dir('data', form_id, 'qctrack.json')
+                        qc_track = read_json_file(dir_x)
+                        
+                        if qc_track['CompletionDate'] != '':
+                            if type(qc_track['CompletionDate']) == str:
+                                df_survey['CompletionDate'] = pd.to_datetime(df_survey['CompletionDate'])
+                            
+                            date_old = date_time(qc_track['CompletionDate']) # date from the JSON file that stores the last record
+                            df_survey =  df_survey[ df_survey.CompletionDate > date_old ] 
+    
+    
+                        # filename for downloaded data
+                        filename = '%s.dta' % form_id
+                        file = make_relative_dir('data', form_id, filename)
+                        
+                        # replace hyphens with underscores in column names
+                        df_survey.columns = df_survey.columns.str.replace("[-]", "_")
+                        data = to_dta(df_json = df_survey, filepath = file ) # store data in stata file
+                        
+                        # reduce columns 
                         df_surv = reduce_cols_in_surveyData(df_survey,df_xls) # only get cols relevant to messages, incentives, etc.
                         qc_messenger(df_surv, df_xls, qc_track, err_chnl, google_sheet_url ) # perform quality control, post messages, and send incentives          
 
