@@ -129,10 +129,20 @@ def xls2py(dataframe):
 def df_xls_data(google_sheet_url, err_chnl = None):
     # 1. open worksheets in google sheet
     try:
-        google_sheet = open_google_sheet(google_sheet_url)              # Open google sheet
-        ws_svy =  google_sheet.worksheet('survey')                      # Open the worksheet named survey
-        ws_choices =  google_sheet.worksheet('choices')                 # Open the worksheet named choices
-        ws_set = google_sheet.worksheet('settings')                     # Open the worksheet named settings
+        
+        try:
+            google_sheet = open_google_sheet(google_sheet_url)              # Open google sheet
+            ws_svy =  google_sheet.worksheet('survey')                      # Open the worksheet named survey
+            ws_choices =  google_sheet.worksheet('choices')                 # Open the worksheet named choices
+            ws_set = google_sheet.worksheet('settings')                    # Open the worksheet named settings
+        except Exception as err:
+            slack_post(str(err_chnl),str(err))
+            time.sleep(200)
+            google_sheet = open_google_sheet(google_sheet_url)              # Open google sheet
+            ws_svy =  google_sheet.worksheet('survey')                      # Open the worksheet named survey
+            ws_choices =  google_sheet.worksheet('choices')                 # Open the worksheet named choices
+            ws_set = google_sheet.worksheet('settings')                    # Open the worksheet named settings
+    
     except Exception as error:
         error =  '`ConnectionError:`\n*GoogleSheet: * the link is invalid or missing worksheets (survey, choices, settings). Please correct the mistake to continue.\n'
         slack_post(str(err_chnl),error) # send message to slack
@@ -237,9 +247,8 @@ def df_xls_data(google_sheet_url, err_chnl = None):
         # create dashboard header
         try:
             db_sel  = df_select[df_select.dashboard_state == 'TRUE'] # dashboard dataframe
-            db_msg  = df_msg[df_msg.dashboard_state == 'TRUE'] # dashboard dataframe
+            db_msg  = df_msg[(df_msg.dashboard_state == 'TRUE') | (df_msg.dashboard_state == 'DUPLICATE') ] # dashboard dataframe
             db_head =list(dict.fromkeys( list(db_msg['name']) + list(db_sel['name']) ))
-            
         except:
             db_head = None
         
@@ -426,7 +435,7 @@ def slack_post(channel_name, slack_msg):
 #--------------------------------------------------------------------------------------------------------------------------------
 
 # evaluate conditions and post messages to channel    
-def control_messenger(df_msg,df_xls,err_chnl=None,df_dashboard=None):
+def control_messenger(df_msg,df_xls,err_chnl=None,df_dashboard=None,google_sheet_url=None ):
     # list of unique channel names
     df_msg = df_msg.sort_values(by=['channel_id'])
     lst = df_msg.drop_duplicates(subset='channel_name', keep ='first')['channel_name']
@@ -435,6 +444,15 @@ def control_messenger(df_msg,df_xls,err_chnl=None,df_dashboard=None):
         msg = ''
         error = ''
         dfx = df_msg.loc[df_msg['channel_name'] == chnl] # filter by channel name
+        
+        # get Duplicate dashboard_state
+        try:
+            dfx = dfx.sort_values(by = 'dashboard_state',ascending = False)
+            db_states = list(dfx['dashboard_state'])
+            print()
+        except Exception as err:
+            db_states = []
+        
         for index in dfx.index.values:
             # determine column type
             
@@ -446,12 +464,26 @@ def control_messenger(df_msg,df_xls,err_chnl=None,df_dashboard=None):
             header = evalfunc_str(dfx.loc[index,'message_header'],df_xls)
             messenger = dfx.loc[index,'messenger']
             col = dfx.loc[index,'name']
+            db_state = dfx.at[index,'dashboard_state']
+            
+            if 'DUPLICATE' in db_states and db_state == 'DUPLICATE':
+                msg_rel_ = msg_rel.split('==')
+                dup_key = msg_rel_[1].strip()
+                dup_val = msg_rel_[0].strip()
+                dup_msg = msg_label
+                
+                #print('Duplicate Check: \t duplicate_key : %s | duplicate_value: %s' %(dup_key,dup_val))
+            else:
+                dup_key = None
+                dup_val = None
+
 
             try:
-                if msg_rel != 'nan' and eval(str(msg_rel))==True:
+                if msg_rel != 'nan' and eval(str(msg_rel))==True: # and db_state == 'TRUE':
                     msg = msg + msg_label + '\n'
                     
                     value = 1
+                    # populate dashboard
                     df_dashboard = dashboard(df_dashboard,col,value)
 
             except Exception as exceptErr:
@@ -462,6 +494,15 @@ def control_messenger(df_msg,df_xls,err_chnl=None,df_dashboard=None):
         
         chnl = chnl.replace('""','')
         chnl = chnl.replace('"','')
+    
+        
+        dup_state = to_google_sheet(df_dashboard, google_sheet_url,err_chnl=err_chnl, duplicate_key = dup_key, duplicate_value = dup_val )
+            
+           
+        if dup_state == True:
+            msg = msg + dup_msg + '\n'
+
+        
         
         if msg !='' or error !='':
             #print('channel: ',chnl,'\nmsg: \n', msg)
@@ -470,22 +511,21 @@ def control_messenger(df_msg,df_xls,err_chnl=None,df_dashboard=None):
                 slack_msg = slack_msg.replace('""','')
                 slack_msg = slack_msg.replace('"','')
 
-                #print('\nMessage channel: ', chnl)
+                print('\nMessage channel: ', chnl)
                 slack_post(chnl.lower(), slack_msg.replace('nan',''))
-                
-               
-      
+
             #print('channel: ',chnl,'\nmsg: \n', msg)
             if messenger.lower() == 'slack':
                 error = '`Syntax error(s):`\nMake sure xls names ( i.e ${name} ) in the *messages* worksheet exists, spelled correctly, or the same type is compared in the following:\n' + error
-                slack_synt = header + '\n' + error
+                slack_synt = header + '\n' + error + '\n' + google_sheet_url
                 slack_synt = slack_synt.replace('""','')
                 slack_synt = slack_synt.replace('"','')
                    
                 chnl = chnl.replace('""','')
                 chnl = chnl.replace('"','')
-                #print('\nSyntax channel: ', err_chnl)
+                print('\nSyntax channel: ', err_chnl)
                 slack_post(err_chnl.lower(), slack_synt.replace('nan',''))
+    
     return df_dashboard
 
 
@@ -499,7 +539,7 @@ def timezone_sast(date_str):
     return  utc_dt.astimezone(jhb).strftime(fmt)
 
 # quality contorl and messenger (populate xls control variables with data from surveyCTO)
-def qc_messenger(df_survey,df_xls,qc_track, admin_channel = None, google_sheet_url=None):
+def qc_messenger(df_survey,df_xls,qc_track, admin_channel = None, google_sheet_url=None, duplicate_key = ''):
     
     form_id = df_xls['form_id']
     dirX = make_relative_dir('data', form_id, 'qctrack.json')
@@ -571,7 +611,7 @@ def qc_messenger(df_survey,df_xls,qc_track, admin_channel = None, google_sheet_u
 
 
                 # evaluate quality control conditions and post messages on channels
-                df_db = control_messenger(df_msg, df_xls, admin_channel, df_dashboard)            
+                df_db = control_messenger(df_msg, df_xls, admin_channel, df_dashboard,google_sheet_url= google_sheet_url)            
                 
 
                 # ----------------- send incentives -------------
@@ -641,7 +681,7 @@ def qc_messenger(df_survey,df_xls,qc_track, admin_channel = None, google_sheet_u
     
                 print('\n',qc_track)
                 write_to_json(dirX, qc_track) # record the last checked interview in json fileq               
-                to_google_sheet(df_dashboard = df_db, google_sheet_url = google_sheet_url)
+                #to_google_sheet(df_dashboard = df_db, google_sheet_url = google_sheet_url)
     
     return True
                 
@@ -662,7 +702,7 @@ def qc_manager(google_sheet_url,username,password,server):
 
         import time
         print('The End')
-        time.sleep(60)
+        time.sleep(200)
         
 # determine the type of a column  value      
 def coltype(col, df_select):
@@ -706,7 +746,7 @@ def dataframe_to_worksheet(google_sheet, ws_title, df_data):
         except Exception as err:
             print(err)
         
- # dashboard       
+# dashboard       
 def dashboard(df_dashboard,col,value,colType= None,df_xls=None):
     if df_dashboard is not None and col in list(df_dashboard):
         if type(value) == str:
@@ -719,7 +759,17 @@ def dashboard(df_dashboard,col,value,colType= None,df_xls=None):
             #print('db: ',value)
             if str(value).isdigit():
                 value = int(value)
-            df_dashboard.loc[0,col] = jr_choice_name(value,col,df_xls)
+                
+            db_label = jr_choice_name(value,col,df_xls)
+            
+            if db_label == 'nan':
+                
+                #print('\n',db_label == 'nan')
+                db_label = value
+            
+            
+            #print('db_label: %s, db_type:%s, col: %s, value: %s'%(db_label,type(db_label), col, value))
+            df_dashboard.loc[0,col] = db_label
            # print('value: ', value, ' col: ', col, ' jr: ', jr_choice_name(value,col,df_xls))
             
         elif str(colType) == 'select_multiple':
@@ -743,26 +793,55 @@ def dashboard(df_dashboard,col,value,colType= None,df_xls=None):
     return df_dashboard
 
 
-def to_google_sheet(df_dashboard, google_sheet_url, ws_title = 'dashboard'):
-    t0 = now()
+def to_google_sheet(df_dashboard, google_sheet_url,err_chnl = None, ws_title = 'dashboard',duplicate_key = None, duplicate_value = None, dup_var= None ):
+
     # open google sheet and get worksheets
-    gsheet = open_google_sheet(google_sheet_url) # open google sheet using url
-    wks = gsheet.worksheets() #  list of sheet names
+    try:
+        gsheet = open_google_sheet(google_sheet_url) #  list of sheet names
+    except Exception as err:
+        error = '`Google Sheets:`\n Reading limit. The backend will resume after 5 seconds.'
+        slack_post(err_chnl, error)
+        time.sleep(200)
+        gsheet = open_google_sheet(google_sheet_url)
+    
+    try:
+        wks = gsheet.worksheets() #  list of sheet names
+    except Exception as err:
+        error = '`Google Sheets:`\n Reading limit. The backend will resume after 60 seconds.'
+        slack_post(err_chnl, error)
+        time.sleep(200)
+        wks = gsheet.worksheets()
     
     ws_name = "'" + ws_title + "'"
     
     if ws_name not in str(wks):
     # create or read dashboard worksheet
     # create sheet if sheet does not exist, then write to sheet
-        ws_db = gsheet.add_worksheet(title = ws_title, rows = str(100000), cols = len(list(df_dashboard))) # create worksheet
-        set_with_dataframe(ws_db, df_dashboard)
+    
+        df = df_dashboard.replace(np.nan,'',regex=True)
+        df = df_dashboard.replace('nan','',regex=True).astype(str)
+        
+        
+        ws_db = gsheet.add_worksheet(title = ws_title, rows = str(10000), cols = len(list(df))) # create worksheet
+        # Convert data frame to a list
+        row = df.iloc[0].values.tolist() # convert row to list
+        ws_db.insert_row(list(df), 1)
+        ws_db.insert_row(row, 2) # write list to worksheet
+        
+        #set_with_dataframe(ws_db, df_dashboard.replace('nan', '', regex=True))
+        
         return False
     
     # sheet exists so read, then write to sheet
     else:
-        # read worksheet
-        
-        ws_db = gsheet.worksheet(ws_title) # open worksheet 
+        try:
+            ws_db = gsheet.worksheet(ws_title) # open worksheet 
+        except Exception as err:
+            error = '`Google Sheets:`\n Reading limit. The backend will resume after 5 seconds.'
+            slack_post(err_chnl, error)
+            time.sleep(200)
+            ws_db = gsheet.worksheet(ws_title) # open worksheet 
+
         # read worksheet in dataframe
         #df_ws = get_as_dataframe(ws_db).dropna(how='all').astype(str)
         recs = ws_db.get_all_records()
@@ -770,23 +849,47 @@ def to_google_sheet(df_dashboard, google_sheet_url, ws_title = 'dashboard'):
 
         # get headers
         if recs != []:
-            ws_head = list(recs[0].keys()) # get headers
+            ws_head = list(recs[0].keys()) # get headers from worksheet
         
             #print('db_cols = %s',ws_head)
+            
+            db_head = list(df_dashboard) # get columns from TRUE dashboard_state variables
             
             df_e = pd.DataFrame( columns = list( set(ws_head).difference( list(df_dashboard) ) ) )
             df_DB = pd.concat([df_e,df_dashboard], sort = False).replace(np.nan, '', regex=True)[ws_head]
             #df_DB = pd.concat([df_e,df_dashboard], sort = False).replace('nan', '', regex=True)[ws_head]
-            df_DB = df_DB.astype(str)
+
+            # FIND DUPLICATE
+            if duplicate_key is not None:
+                
+                df_recs = pd.DataFrame(recs)
+                
+                dup_state = in_df(df_recs,value = duplicate_value, key = duplicate_key, gsheet_url = google_sheet_url, slack_channel = err_chnl)
+                
+                if dup_state == True:
+                    df_DB['DUPLICATE'] = 1
+                else:
+                    df_DB['DUPLICATE'] = 0
+                    
+            else:
+                dup_state = False
+                df_DB['DUPLICATE'] = 0
             
+            df_DB = df_DB.astype(str)
+            df_DB = df_DB.replace('nan', '', regex=True)
             # Convert data frame to a list
             row = df_DB.iloc[0].values.tolist() # convert row to list
             ws_db.insert_row(row, index) # write list to worksheet
         else:
-            set_with_dataframe(ws_db, df_dashboard)
-        
-        #print('\nELSE: %s' % (now() - t0))
-        return True
+             # Convert data frame to a list
+            df_dashboard = df_dashboard.replace(np.nan,'',regex=True).astype(str)
+            row = df_dashboard.iloc[0].values.tolist() # convert row to list
+            ws_db.insert_row(list(df_dashboard), 1)
+            ws_db.insert_row(row, 2) # write list to worksheet
+            
+            dup_state = False
+
+    return dup_state
 
 # write to stata (dta) file
 def to_dta(df_json, filepath):
@@ -809,5 +912,154 @@ def to_dta(df_json, filepath):
     data.to_stata( filepath, encoding = 'ascii', version = 117, write_index = False )
 
     return data
+
+
+def json_tracker(dir_x):
+    Dir = dir_x.replace('/qctrack.json','')
+    print(Dir)
+    if not os.path.exists(Dir):
+        os.makedirs(Dir)
+    
+    f = open(dir_x,"w+")
+    json.dump({'StartDate': '','CompletionDate':'','KEY':'', 'ExportTime':'','failedRecharges': [], 'finalTrial':[]}, f) # write to json file
+    f.close()
+            
+    # read the track file
+    return read_json_file(dir_x)
+
+def in_preload(df_survey,df_preload,pre_identifier = 'pre_id_learner', identifier = 'id_learner', id_type = int):
+
+    
+    for i in df_survey.index.values:
         
+        if not pd.isnull(df_survey.at[i,identifier]):
+            df_pre_row = df_preload[df_preload[pre_identifier] == int(float(df_survey.at[i,identifier]))]
+        else:
+            df_pre_row = []
         
+        if len(df_pre_row) >0:
+            idx = df_pre_row.index.values[0]
+            for col in df_pre_row.columns:
+                #print('col: %s, pre_val: %s' %(col,df_pre_row.at[idx,col]))
+                df_survey.at[i,col] = str(df_pre_row.at[idx,col])
+            
+            df_survey.at[i,'pre_match'] = 1
+        else:
+            df_survey.at[i,'pre_match'] = 0
+       
+    return df_survey
+
+# pre process dataframe
+def pre_process(df_survey, grade):
+    # rename and format column
+    df_survey = df_survey.rename(columns = {'end_time':'CompletionDate'})
+    df_survey.columns = df_survey.columns.str.replace("[-]", "_")
+    
+    df_survey = df_survey.sort_values(by = 'CompletionDate')
+    
+    # format values in specific columns
+    for i in df_survey.index.values:
+        
+        starttime = df_survey.at[i,'start_time']
+        endtime = df_survey.at[i,'CompletionDate']
+        
+        id_school = df_survey.at[i,'id_school'] # School ID
+        id_learner = df_survey.at[i,'id_learner'] # Learner ID
+        id_learner_short = df_survey.at[i,'id_learner_short'] # Short Learner ID
+        df_survey.at[i,'grade'] = grade # assign grade
+
+
+        if not pd.isnull(id_school) and not pd.isnull(id_learner_short):
+            
+            if int(id_learner_short) >= 10:
+                id_learner = int('%s%s%s'%(int(id_school), grade, int(id_learner_short))) # create Learner ID
+            else:
+                id_learner = int('%s%s0%s'%(int(id_school), grade, int(id_learner_short))) # create Learner ID
+        
+        if not pd.isnull(id_learner):
+            df_survey.at[i,'id_learner'] = int(id_learner)
+            
+        print(df_survey.at[i,'id_learner'])
+        
+        if not pd.isnull(starttime):
+            df_survey.at[i,'start_time'] = date_time(format_date_time(str(datetime.fromtimestamp(int(starttime)/1000)),'%b %d, %Y   %H:%M:%S'))
+        else:
+            df_survey.at[i,'start_time'] = date_time(format_date_time(str(datetime.fromtimestamp(int(endtime)/1000)),'%b %d, %Y   %H:%M:%S'))
+        
+        if not pd.isnull(endtime):
+            df_survey.at[i,'CompletionDate'] = date_time(format_date_time(str(datetime.fromtimestamp(int(endtime)/1000)),'%b %d, %Y   %H:%M:%S'))
+        else:
+            df_survey.at[i,'CompletionDate']  = date_time(format_date_time(str(datetime.fromtimestamp(int(starttime)/1000)),'%b %d, %Y   %H:%M:%S'))
+            
+        print('start_time: %s | endtime %s' %(df_survey.at[i,'start_time'],df_survey.at[i,'CompletionDate']))
+    
+    return df_survey
+
+
+def in_df(df,value = None, key = None,head = 'Duplicate', slack_channel = 'pydata_err', gsheet_url=None):
+    
+    if key is not None:
+        try:
+            if str(value) != 'nan':
+                
+                key =  str(key).replace("'","").strip()
+                df[key] = df[key].astype(str)
+                
+                df_recs = df[df[key] == str(value)]
+                
+                if len(df_recs)>0:
+                    return True
+                else:
+                    return False
+            
+        except Exception as err:
+            err = str(err).replace('col{','${')
+            err_msg = '*%s:* \n`KeyError:`  The variable %s is not in the dataset. Therefore, it could no be used to determine the duplicate.\n%s' %(head,err,gsheet_url)
+            slack_post(slack_channel, err_msg)
+    return False
+
+
+# change column
+
+def str_to_datetime(df):
+    
+    for i in df['CompletionDate'].index.values:
+        date_before = str(df.at[i,'CompletionDate'])
+        
+        print(date_before)
+        
+        if str(df.at[i,'CompletionDate']) == 'nan':
+            df.at[i,'CompletionDate'] ==  df.at[i,'start_time']
+        else:
+            
+            print('S2D: ',date_before)
+            if '[' in date_before and ']' in date_before:
+                dt_list = date_before.split("'")
+                df.at[i,'CompletionDate'] = date_time(dt_list[-2])
+            
+            else:
+                df.at[i,'CompletionDate'] = date_time(date_before)
+            
+        date_after = df.at[i,'CompletionDate']
+        
+        #print('Before: %s (%s) | After: %s (%s)' %(date_before, type(date_before), date_after,type(date_after )))
+    return df
+
+
+def col_to_int(df, col):
+    for i in df.index.values:
+        
+        print(df.at[i,col])
+        
+        if not pd.isnull(df.at[i,col])  :
+            df.at[i,col] = int(float(df.at[i,col]))
+            print(df.at[i,col] )
+            
+    return df
+
+
+def add_key(df):
+    for i in df.index.values:
+        df.at[i,'KEY'] = str(uuid()) # assign key to submission
+    
+    return df
