@@ -23,3 +23,6 @@ This worksheet is pre-existing in the XLS form template. You need this worksheet
 ### [settings](https://docs.google.com/spreadsheets/d/1J7vr1fY8PlsXcAlCewMDBbMsxdHICZPR7CoPby-MYBs/edit#gid=1265829571)
 
 This worksheet is pre-existing in the XLS form template. You need this worksheet since it contains the **form_id** needed to download the data from surveyCTO.
+
+### [messages](https://docs.google.com/spreadsheets/d/1J7vr1fY8PlsXcAlCewMDBbMsxdHICZPR7CoPby-MYBs/edit#gid=1628036173)
+This worksheet is the interface to program the quality control conditions and resulting messages when they are satisfied. You have to create this worksheet and its columns. Create the **channel_id, message_relevance, message_label,	dashboard_state,** and **name** columns.
