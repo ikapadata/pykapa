@@ -12,14 +12,14 @@ This section provides an overview of the necessary and optional sheets needed to
 
 The following worksheets in the XLS form are necessary to monitor data collection and cleaning data.
 
-### i) survey
+### survey
 
 This worksheet is pre-existing in the XLS form [template](https://docs.google.com/spreadsheets/d/1J7vr1fY8PlsXcAlCewMDBbMsxdHICZPR7CoPby-MYBs/edit). This worksheet is very important as it is the interface creating questions and structure for your questionnaire. You will have to add the **dashboard_state** column and set the values to TRUE for fields that you want to use to create your dashboard.
 
-### ii) choices
+### choices
 
-This worksheet is pre-existing in the XLS form [template](https://docs.google.com/spreadsheets/d/1J7vr1fY8PlsXcAlCewMDBbMsxdHICZPR7CoPby-MYBs/edit#gid=1259247300). You need this worksheet to be able to pull the label for select and select_multiple variables using the jr:choice-name(${variable}, '${varaible}') such that your messages on Slack are readable.
+This worksheet is pre-existing in the XLS form [template](https://docs.google.com/spreadsheets/d/1J7vr1fY8PlsXcAlCewMDBbMsxdHICZPR7CoPby-MYBs/edit#gid=1259247300). You need this worksheet to be able to pull the label for select and select_multiple variables using the `jr:choice-name(${variable}, '${varaible}')` such that your messages on Slack are readable.
 
-### iii) settings
+### settings
 
 This worksheet is pre-existing in the XLS form [template](https://docs.google.com/spreadsheets/d/1J7vr1fY8PlsXcAlCewMDBbMsxdHICZPR7CoPby-MYBs/edit#gid=1265829571). You need this worksheet since it contains the **form_id** needed to download the data from [surveyCTO](https://www.surveycto.com).
