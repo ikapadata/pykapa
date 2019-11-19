@@ -38,4 +38,35 @@ This worksheet allows you to clean data by correcting mistakes made during data 
 
 This worksheet allows you incentivise respondents with airtime, data bundles or sms bundles. You have to create this worksheet and its columns. Create the **incentive_type, amount, contact, network, recharge_count, flickswitch_api_key,** and **messenger** columns.
 
+## 1.3. **Programmatically Created Sheets**
 
+The following worksheets are created automatically when the program is running. You must not create any worksheet with the following names.
+
+### dashboard
+
+This worksheet is created automatically if the survey or messages worksheets have the **dashboard_state** column with TRUE values. You can then use the data in this worksheet to create dashboards using Data Studio.
+
+# 2. Run Python Script
+
+Firstly you must create an environment for the form so it will run uninterrupted and doesn't time out. Create a new **tmux** session. The following example shows a new **tmux** session called `abalobi_individual` .
+
+    $ tmux new -s abalobi_individual
+
+After creating a session for your form navigate to the folder containing the python script and run it as follows.
+
+    $ cd pykapa/pykapa
+    $ python3 qcMessenger.py
+
+You will then be prompted to enter details such as google sheet link, surveyCTO credentials, and slack channel to post error messages that the script encounters during execution.
+
+Thereafter, you can exit the session to have it running in the backend without interruption. To exit the session do the following hold the keys `control + b` thereafter click `d`. Once you have exited you can create another session for another form or exit the terminal.
+
+To attach to the created session type the following, in this case you're attaching to `abalobi_individual`.
+
+    $ tmux a -t abalobi_individual
+
+At the end of a project you will have to end the session by typing the following outside the session.
+
+    $ tmux kill-session -t abalobi_individual
+
+There are more tmux commands you will find useful at [tmux-commands](https://gist.github.com/MohamedAlaa/2961058).
