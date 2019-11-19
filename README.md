@@ -6,20 +6,20 @@ The package reads an XLS form (Google Sheet) quality control conditions on the c
 This version only works for XLS forms created on Google Sheets, data collected and stored via surveyCTO, incentives distribiuted via flickswitch or SimControl, and dashboards created on [Data Studio](https://datastudio.google.com) for visualising progress and performance of enumerators.
 
 # 1. Google Sheet Setup
-This section provides an overview of the necessary and optional sheets needed to monitor and clean data or send incentives.
+This section provides an overview of the necessary and optional sheets needed to monitor and clean data or send incentives. View the [template](https://docs.google.com/spreadsheets/d/1J7vr1fY8PlsXcAlCewMDBbMsxdHICZPR7CoPby-MYBs/edit) for guidance.
 
 ## 1. 1. **Necessary Sheets**
 
 The following worksheets in the XLS form are necessary to monitor data collection and cleaning data.
 
-### survey
+### [survey](https://docs.google.com/spreadsheets/d/1J7vr1fY8PlsXcAlCewMDBbMsxdHICZPR7CoPby-MYBs/edit)
 
-This worksheet is pre-existing in the XLS form [template](https://docs.google.com/spreadsheets/d/1J7vr1fY8PlsXcAlCewMDBbMsxdHICZPR7CoPby-MYBs/edit). This worksheet is very important as it is the interface creating questions and structure for your questionnaire. You will have to add the **dashboard_state** column and set the values to TRUE for fields that you want to use to create your dashboard.
+This worksheet is pre-existing in the XLS form template. This worksheet is very important as it is the interface creating questions and structure for your questionnaire. You will have to add the **dashboard_state** column and set the values to TRUE for fields that you want to use to create your dashboard.
 
 ### choices
 
-This worksheet is pre-existing in the XLS form [template](https://docs.google.com/spreadsheets/d/1J7vr1fY8PlsXcAlCewMDBbMsxdHICZPR7CoPby-MYBs/edit#gid=1259247300). You need this worksheet to be able to pull the label for select and select_multiple variables using the `jr:choice-name(${variable}, '${varaible}')` such that your messages on Slack are readable.
+This worksheet is pre-existing in the XLS form template. You need this worksheet to be able to pull the label for select and select_multiple variables using the `jr:choice-name(${variable}, '${varaible}')` such that your messages on Slack are readable.
 
 ### settings
 
-This worksheet is pre-existing in the XLS form [template](https://docs.google.com/spreadsheets/d/1J7vr1fY8PlsXcAlCewMDBbMsxdHICZPR7CoPby-MYBs/edit#gid=1265829571). You need this worksheet since it contains the **form_id** needed to download the data from [surveyCTO](https://www.surveycto.com).
+This worksheet is pre-existing in the XLS form template. You need this worksheet since it contains the **form_id** needed to download the data from [surveyCTO](https://www.surveycto.com).
