@@ -3,22 +3,23 @@ This package leverages on ODK platforms in a mission to provide affordable resea
 
 The package reads an XLS form (Google Sheet) quality control conditions on the collected data and posts messages to relevant slack channels when the conditions are satisfied. if incentives are associated with the research, then airtime, SMS or data bundle incentives are awarded to respondents.  
 
-This version only works for XLS forms created on Google Sheets, data collected and stored via surveyCTO, incentives distribiuted via flickswitch or SimControl.
+This version only works for XLS forms created on Google Sheets, data collected and stored via surveyCTO, incentives distribiuted via flickswitch or SimControl, and dashboards created on [Data Studio](https://datastudio.google.com) for visualising progress and performance of enumerators.
 
 # 1. Google Sheet Setup
+This section provides an overview of the necessary and optional sheets needed to monitor and clean data or send incentives.
 
 ## 1. 1. **Necessary Sheets**
 
-The following worksheets in the XLS form are necessary to monitor data collection and cleaning of data.
+The following worksheets in the XLS form are necessary to monitor data collection and cleaning data.
 
-### a) Survey
+### i) survey
 
-    This sheet is pre-existing in the survey form uploaded to [ikapadata.surveycto.com](http://ikapadata.surveycto.com). You will have to add the **dashboard_state** column and set the values to TRUE for names that you want to appear in the dashboard worksheet.
+This worksheet is pre-existing in the XLS form [template](https://docs.google.com/spreadsheets/d/1J7vr1fY8PlsXcAlCewMDBbMsxdHICZPR7CoPby-MYBs/edit). This worksheet is very important as it is the interface creating questions and structure for your questionnaire. You will have to add the **dashboard_state** column and set the values to TRUE for fields that you want to use to create your dashboard.
 
-- `choices`
+### ii) choices
 
-    This sheet is pre-existing in the survey form uploaded to [ikapadata.surveycto.com](http://ikapadata.surveycto.com). You need this worksheet to be able to pull the label for select  and select_multiple variables using the jr:choice-name(${variable}, '${varaible}').
+This worksheet is pre-existing in the XLS form [template](https://docs.google.com/spreadsheets/d/1J7vr1fY8PlsXcAlCewMDBbMsxdHICZPR7CoPby-MYBs/edit#gid=1259247300). You need this worksheet to be able to pull the label for select and select_multiple variables using the jr:choice-name(${variable}, '${varaible}') such that your messages on Slack are readable.
 
-- `settings`
+### iii) settings
 
-    This sheet is pre-existing in the survey form uploaded to [ikapadata.surveycto.com](http://ikapadata.surveycto.com). You need this since it contains the **form_id** needed to download the data from [ikapadata.surveycto.com](http://ikapadata.surveycto.com).
+This worksheet is pre-existing in the XLS form [template](https://docs.google.com/spreadsheets/d/1J7vr1fY8PlsXcAlCewMDBbMsxdHICZPR7CoPby-MYBs/edit#gid=1265829571). You need this worksheet since it contains the **form_id** needed to download the data from [surveyCTO](https://www.surveycto.com).
