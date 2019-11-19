@@ -9,9 +9,9 @@ This version only works for XLS forms created on Google Sheets, data collected a
 
 ## 1. 1. **Necessary Sheets**
 
-The following sheets in the survey form are necessary for alerts to show on the [ikapadata.slack.com](http://ikapadata.slack.com) slack workspace. 
+The following worksheets in the XLS form are necessary to monitor data collection and cleaning of data.
 
-- `survey`
+###a. Survey
 
     This sheet is pre-existing in the survey form uploaded to [ikapadata.surveycto.com](http://ikapadata.surveycto.com). You will have to add the **dashboard_state** column and set the values to TRUE for names that you want to appear in the dashboard worksheet.
 
