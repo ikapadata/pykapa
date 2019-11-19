@@ -11,7 +11,7 @@ This version only works for XLS forms created on Google Sheets, data collected a
 
 The following worksheets in the XLS form are necessary to monitor data collection and cleaning of data.
 
-###a. Survey
+### a) Survey
 
     This sheet is pre-existing in the survey form uploaded to [ikapadata.surveycto.com](http://ikapadata.surveycto.com). You will have to add the **dashboard_state** column and set the values to TRUE for names that you want to appear in the dashboard worksheet.
 
