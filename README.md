@@ -18,7 +18,7 @@ This worksheet is pre-existing in the XLS form template. This worksheet is very 
 
 ### [choices](https://docs.google.com/spreadsheets/d/1J7vr1fY8PlsXcAlCewMDBbMsxdHICZPR7CoPby-MYBs/edit#gid=1259247300)
 
-This worksheet is pre-existing in the XLS form template. You need this worksheet to be able to pull the label for select and select_multiple variables using the `jr:choice-name(${variable}, '${varaible}')` such that your messages on Slack are readable.
+This worksheet is pre-existing in the XLS form template. You need this worksheet to be able to pull the label for select and select_multiple variables using the `jr:choice-name(${variable}, '${variable}')` such that your messages on Slack are readable.
 
 ### [settings](https://docs.google.com/spreadsheets/d/1J7vr1fY8PlsXcAlCewMDBbMsxdHICZPR7CoPby-MYBs/edit#gid=1265829571)
 
