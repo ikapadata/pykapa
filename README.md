@@ -30,12 +30,14 @@ This worksheet is the interface to program the quality control conditions and re
 ### [messages_settings](https://docs.google.com/spreadsheets/d/1J7vr1fY8PlsXcAlCewMDBbMsxdHICZPR7CoPby-MYBs/edit#gid=2118996547)
 In this worksheet you assign headers and slack channels for messages to to be posted. You have to create this worksheet and its columns. Create the **channel_id, channel_name, message_header,** and **messenger** columns.
 
+### [corrections](https://docs.google.com/spreadsheets/d/1WUm39fSxk9gigXw5SDbmYiRtg68CW0EMRVnZ1rNemdI/edit#gid=275124491)
+This worksheet allows you to clean data by correcting mistakes made during data collection. You can correct multiple field-values per row. It is limited to `replace` and `drop`, where you replace values or drop observations respectively. You have to create this worksheet and its columns. Create the **action**, **relevance**,	**correction**,	**comment** columns. 
 ## 1.2. **Optional Sheets**
 
 Create the following sheets only if you will use them.
 
-- `incentives_settings`
+### [incentives_settings](https://docs.google.com/spreadsheets/d/1J7vr1fY8PlsXcAlCewMDBbMsxdHICZPR7CoPby-MYBs/edit#gid=1366715473)
 
-You have to create this worksheet and its columns. Create the **incentive_type, amount, contact, network, recharge_count, flickswitch_api_key,** and **messenger** columns.
+This worksheet allows you incentivise respondents with airtime, data bundles or sms bundles. You have to create this worksheet and its columns. Create the **incentive_type, amount, contact, network, recharge_count, flickswitch_api_key,** and **messenger** columns.
 
-    [](https://www.notion.so/31195df2b9ed4bd481e2d15dbbddea80#dc97c376f9f3456cadfec0e4698053ea)
+
