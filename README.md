@@ -48,9 +48,9 @@ This worksheet is created automatically if the survey or messages worksheets hav
 
 # 2. Run Python Script
 
-Firstly you must create an environment for the form so it will run uninterrupted and doesn't time out. Create a new **tmux** session. The following example shows a new **tmux** session called `abalobi_individual` .
+If you running the script on a terminal it is advised to create a tmux environments. So, you can run multiple scripts for multiple forms -it useful for big projects. Create a new **tmux** session. The following example shows a new **tmux** session called _new_session_name_ .
 
-    $ tmux new -s abalobi_individual
+    $ tmux new -s new_session_name
 
 After creating a session for your form navigate to the folder containing the python script and run it as follows.
 
@@ -63,10 +63,10 @@ Thereafter, you can exit the session to have it running in the backend without i
 
 To attach to the created session type the following, in this case you're attaching to `abalobi_individual`.
 
-    $ tmux a -t abalobi_individual
+    $ tmux a -t new_session_name
 
 At the end of a project you will have to end the session by typing the following outside the session.
 
-    $ tmux kill-session -t abalobi_individual
+    $ tmux kill-session -t new_session_name
 
 There are more tmux commands you will find useful at [tmux-commands](https://gist.github.com/MohamedAlaa/2961058).
