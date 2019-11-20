@@ -37,6 +37,11 @@ This worksheet allows you to clean data by correcting mistakes made during data 
 ### [incentives_settings](https://docs.google.com/spreadsheets/d/1J7vr1fY8PlsXcAlCewMDBbMsxdHICZPR7CoPby-MYBs/edit#gid=1366715473)
 
 This worksheet allows you incentivise respondents with airtime, data bundles or sms bundles. You have to create this worksheet and its columns. Create the **incentive_type, amount, contact, network, recharge_count, flickswitch_api_key,** and **messenger** columns.
+### [to_dropbox](https://docs.google.com/spreadsheets/d/1yZfpCAV1BHkHBwfncnvZebFN0xRcUyOa6j6gcwkBlxk/edit#gid=86807683)
+
+This worksheet allows you to back your data on [Dropbox](http://dropbox.com). You have to create this worksheet and its columns. It consist of only two colums, **dropbox_dir** and **dropbox_token**. View [generate dropbox token](https://blogs.dropbox.com/developers/2014/05/generate-an-access-token-for-your-own-account/) to follow the instruction on how to obtain an access token.
+
+Create the **incentive_type, amount, contact, network, recharge_count, flickswitch_api_key,** and **messenger** columns.
 
 ## 1.3. **Programmatically Created Sheets**
 
@@ -48,7 +53,8 @@ This worksheet is created automatically if the survey or messages worksheets hav
 
 # 2. Run Python Script
 
-If you running the script on a terminal it is advised to create a tmux environments. So, you can run multiple scripts for multiple forms -it useful for big projects. Create a new **tmux** session. The following example shows a new **tmux** session called _new_session_name_ .
+If you running the script on a terminal it is advised to create tmux environments. So, you can use the same script for multiple forms - it's useful for big projects. Create a new **tmux** session. The following example shows a new **tmux** session called _new_session_name_ .
+View [tmux-commands](https://gist.github.com/MohamedAlaa/2961058) for more information on tmux installation and commands.
 
     $ tmux new -s new_session_name
 
@@ -57,11 +63,11 @@ After creating a session for your form navigate to the folder containing the pyt
     $ cd pykapa/pykapa
     $ python3 qcMessenger.py
 
-You will then be prompted to enter details such as google sheet link, surveyCTO credentials, and slack channel to post error messages that the script encounters during execution.
+You will then be prompted to enter the google sheet link, surveyCTO credentials, slack bot token, slack channel to post error messages that the script encounters during execution.
 
 Thereafter, you can exit the session to have it running in the backend without interruption. To exit the session do the following hold the keys `control + b` thereafter click `d`. Once you have exited you can create another session for another form or exit the terminal.
 
-To attach to the created session type the following, in this case you're attaching to `abalobi_individual`.
+To attach to the created session type the following, in this case you're attaching to `new_session_name`.
 
     $ tmux a -t new_session_name
 
@@ -69,4 +75,4 @@ At the end of a project you will have to end the session by typing the following
 
     $ tmux kill-session -t new_session_name
 
-There are more tmux commands you will find useful at [tmux-commands](https://gist.github.com/MohamedAlaa/2961058).
+
