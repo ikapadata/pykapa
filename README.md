@@ -2,9 +2,9 @@
 This a free and open source python script to monitor, manage, and clean collected data. It is intended to provide (a) affordable quality assurance tools in resource-constrained environments and (b) lower the barrier of programming level needed to automate scripts. Google Sheets is used as the programming interface, so the minimum requirements are knowledge of Google Sheets formulas and XLS forms. An added bonus is the transparency offered by posting quality issues associated with data and progress reports on Slack. Therefore, all stakeholders are able to monitor, track and follow up on issues in real time. A user only needs to provide their [slack bot token](). If incentives are associated with the research, then airtime, SMS or data bundle incentives are awarded to respondents.  
 
 - [Google Sheets](https://docs.google.com) [Free] - create survey, set quality control and incentive parameters, edit and clean data.
-- [Slack](https://slack.com) [Free] - post quality control issues, post progress reports, and collabortion among stakeholders
-- [Data Studio](https://datastudio.google.com) [Free] - data visualisation
-- [surveyCTO](https://www.surveycto.com) [Paid] - Android application, data collection and storage
+- [Slack](https://slack.com) [Free] - post quality control issues and progress reports, transparent and effective communication and collaboration between stakeholders.
+- [Data Studio](https://datastudio.google.com) [Free] - data visualisation.
+- [surveyCTO](https://www.surveycto.com) [Paid] - Android application, data collection and storage.
 - [SimControl](https://new.simcontrol.co.za/) or flickswitch](https://www.flickswitch.co.za) [Paid] (Optional) - Airtime, SMS and Data bundles distribution. 
 - [Dropbox](http://dropbox.com) [Free](Optional) - online backup of collected and clean data.
 
