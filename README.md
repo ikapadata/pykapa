@@ -1,9 +1,13 @@
 # pykapa
-This package leverages on ODK platforms in a mission to provide affordable research tools to researchers for data collection, monitoring, and cleaning. An integration between pykapa and Slack messenger is used to post quality issue alerts, and progress reports on specific channels, which researchers can access to monitor data collection and instantly follow up on quality issues and correct them timeuosly. An added bonus is the transparency that comes with instant messaging-based communication as relevant stakeholders can monitor all communication in real time.
+This a free and open source python script to monitor, manage, and clean collected data. It is intended to provide (a) affordable quality assurance tools in resource-constrained environments and (b) lower the barrier of programming level needed to automate scripts. Google Sheets is used as the programming interface, so the minimum requirements are knowledge of Google Sheets formulas and XLS forms. An added bonus is the transparency offered by posting quality issues associated with data and progress reports on Slack. Therefore, all stakeholders are able to monitor, track and follow up on issues in real time. A user only needs to provide their [slack bot token](). If incentives are associated with the research, then airtime, SMS or data bundle incentives are awarded to respondents.  
 
-The package reads an XLS form for quality control and data cleaning conditions on the collected data, then posts messages to relevant slack channels when the conditions are satisfied and saves the raw and clean data files. if incentives are associated with the research, then airtime, SMS or data bundle incentives are awarded to respondents.  
+- [Google Sheets](https://docs.google.com) [Free] - create survey, set quality control and incentive parameters, edit and clean data.
+- [Slack](https://slack.com) [Free] - post quality control issues, post progress reports, and collabortion among stakeholders
+- [Data Studio](https://datastudio.google.com) [Free] - data visualisation
+- [surveyCTO](https://www.surveycto.com) [Paid] - Android application, data collection and storage
+- [SimControl](https://new.simcontrol.co.za/) or flickswitch](https://www.flickswitch.co.za) [Paid] (Optional) - Airtime, SMS and Data bundles distribution. 
+- [Dropbox](http://dropbox.com) [Free](Optional) - online backup of collected and clean data.
 
-This version only works for XLS forms created on [Google Sheets](https://docs.google.com), data collected and stored via [surveyCTO](https://www.surveycto.com), incentives distribiuted via [flickswitch](https://www.flickswitch.co.za) or [SimControl](https://new.simcontrol.co.za/), dashboards created on [Data Studio](https://datastudio.google.com) for visualising progress and performance of enumerators, and post messages on [Slack](https://slack.com).
 
 # 1. Google Sheet Setup
 This section provides an overview of the necessary and optional sheets needed to monitor and clean data or send incentives. View the [template](https://docs.google.com/spreadsheets/d/1J7vr1fY8PlsXcAlCewMDBbMsxdHICZPR7CoPby-MYBs/edit) for guidance.
@@ -25,7 +29,7 @@ This worksheet is pre-existing in the XLS form template. You need this worksheet
 This worksheet is pre-existing in the XLS form template. You need this worksheet since it contains the **form_id** needed to download the data from surveyCTO.
 
 ### [messages](https://docs.google.com/spreadsheets/d/1J7vr1fY8PlsXcAlCewMDBbMsxdHICZPR7CoPby-MYBs/edit#gid=1628036173)
-This worksheet is the interface to program the quality control conditions and resulting messages when they are satisfied. You have to create this worksheet and its columns. Create the **channel_id, message_relevance, message_label,	dashboard_state,** and **name** columns.
+This worksheet is the interface to program the quality control conditions and resulting messages when they are satisfied. You have to create this worksheet and its columns. Create the **channel_id**, **message_relevance**, ***message_label**,	**dashboard_state**,and **name** columns.
 
 ### [messages_settings](https://docs.google.com/spreadsheets/d/1J7vr1fY8PlsXcAlCewMDBbMsxdHICZPR7CoPby-MYBs/edit#gid=2118996547)
 In this worksheet you assign headers and slack channels for messages to to be posted. You have to create this worksheet and its columns. Create the **channel_id, channel_name, message_header,** and **messenger** columns.
