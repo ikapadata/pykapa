@@ -41,8 +41,6 @@ This worksheet allows you incentivise respondents with airtime, data bundles or 
 
 This worksheet allows you to back your data on [Dropbox](http://dropbox.com). You have to create this worksheet and its columns. It consist of only two colums, **dropbox_dir** and **dropbox_token**. View [generate dropbox token](https://blogs.dropbox.com/developers/2014/05/generate-an-access-token-for-your-own-account/) to follow the instruction on how to obtain an access token.
 
-Create the **incentive_type, amount, contact, network, recharge_count, flickswitch_api_key,** and **messenger** columns.
-
 ## 1.3. **Programmatically Created Sheets**
 
 The following worksheets are created automatically when the program is running. You must not create any worksheet with the following names.
