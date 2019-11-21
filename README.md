@@ -4,7 +4,7 @@ This a free and open source python script to monitor, manage, and clean collecte
 - [Google Sheets](https://docs.google.com) [Free] - create survey, set quality control and incentive parameters, edit and clean data.
 - [Slack](https://slack.com) [Free] - post quality control issues and progress reports, transparent and effective communication and collaboration between stakeholders.
 - [Data Studio](https://datastudio.google.com) [Free] - data visualisation.
-- [surveyCTO](https://www.surveycto.com) [Paid] - Android application, data collection and storage.
+- [surveyCTO](https://www.surveycto.com) [Paid] - Android application, data collection, storage and security.
 - [SimControl](https://new.simcontrol.co.za/) or [flickswitch](https://www.flickswitch.co.za) (Optional) [Paid] - Airtime, SMS and Data bundles distribution. 
 - [Dropbox](http://dropbox.com)(Optional) [Free] - online backup of collected and clean data.
 
