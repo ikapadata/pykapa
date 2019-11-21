@@ -30,7 +30,7 @@ def api_query(string,api_key):
 
 # update internal database
 def append_json_db(filepath,data):
-    incentive_db = read_json_file(filepath) # read the internal db
+    incentive_db = read_json_file(filepath) # read t[he internal db
     incentive_db.append(data) # append current recharge data to internal db in json file
     write_to_json(filepath, incentive_db) # write to the internal db
 
@@ -104,10 +104,20 @@ def read_json_file(filepath):
 # write to json file
 def write_to_json(filepath, data):
     if os.path.isfile(filepath) == True:
-        with open(filepath,'w') as jsonX:
-            json.dump(data,jsonX)
-           
-        json_file =  read_json_file(filepath)           
+        with open(filepath,'w') as file:
+            json.dump(data,file)
+    
+    else:
+        # obtain directory
+        filename = filepath.split('/')[-1]
+        dir_file = filepath.replace('/%s'%filename,'')
+        os.makedirs(dir_file)
+        # write to json file
+        with open(filepath,'w') as file:
+            json.dump(data,file)
+       
+    # read the file
+    json_file =  read_json_file(filepath)           
             
     return json_file
 
@@ -180,8 +190,10 @@ def airtime(api_key, msisdn, network, amount, ref=None):
     
     if msisdn != 'nan' and network != 'nan' and amount != 'nan':
         # a. Determine the network ID for a given network name
-        mno_id = sim_control_networks(api_key)[network.lower()] #retrieve network ID  
-        
+        try:
+            mno_id = sim_control_networks(api_key)[network.lower()] #retrieve network ID  
+        except:
+            mno_id = 'TmV0d29ya05vZGU6MTM='
         # b. form query_string and query simcontrol API
         string = concat('mutation { rechargeSim(msisdn: \"',simcontact(msisdn),'\", networkId: \"',mno_id,'\", airtimeAmount:',amount,', reference: \"',ref, '\") { rechargeId message}}')
         recharge = api_query(string,api_key) # perform api_query
@@ -395,16 +407,20 @@ def smsProducts(bundleSize, df):
 def buyProd(api_key, msisdn, network, prodID, ref= None):
     if ref == None:
         ref = str(uuid())
+        
     if msisdn != 'nan' and network != 'nan':  
         # a. Determine the network ID for a given network name
-        mno_id = sim_control_networks(api_key)[network.lower()] #retrieve network ID
-        
+        try:
+            mno_id = sim_control_networks(api_key)[network.lower()] #retrieve network ID
+        except:
+            mno_id = 'TmV0d29ya05vZGU6MTM='
         # b. form query_string and query simcontrol API
         string = concat('mutation { rechargeSim(msisdn: \"',simcontact(msisdn),'\", networkId: \"',mno_id,'\", productId:\"',prodID,'\", reference: \"',ref, '\") { rechargeId message}}')
         recharge = api_query(string,api_key) # perform api_query
         # c. request recharge data
         data_recharge = [recharge_data(reference=ref,api_key=api_key)] # get metadata data of recharge
         
+        print(data_recharge)
         return pd.DataFrame(data_recharge)
     
 # recharge sim card with airtime, data or sms
@@ -421,9 +437,13 @@ def rechargeSim(api_key, msisdn, network, prodType, bundleSize=None, price = 1, 
     else:
         if prodID == None:
             df   = products( api_key = api_key, network= network, prodType = prodType)
+            print('AVAILABLE: \n',df)
             
             if prodType == 'DATA' and bundleSize != None and ('MB' in bundleSize.upper() or 'GB' in bundleSize.upper()):
                 prod = dataProducts(bundleSize, df)
+                
+                print('\nPRODUCTS: \n',prod)
+                
             elif prodType == 'SMS' and bundleSize != None:
                 prod  = smsProducts(bundleSize, df)
             else:

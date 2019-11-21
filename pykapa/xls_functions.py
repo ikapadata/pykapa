@@ -4,7 +4,7 @@ import uuid as UUID
 
 # check if the selected field is equal to the expected value
 def selected(field,value):
-    if field==value:
+    if str(value) in field.split(' '):
         return True
     else:
         return False
@@ -15,28 +15,16 @@ def string_length(field):
 
 # return the selected value at the position described by the number
 def selected_at(field, number):
-    if type(field) == list or type(field) == tuple:
-        if number< len(field):
-            return field[number]
-        else:
-            return 'Error: Specified number is out range'
-    elif type(field)==str:
-        lst = str(field).split()
-        if number < len(lst):
-            return lst[number]
-        else:
-            return 'Error: Specified number is out range'
-    else:
-        return field
+    field = field.split(' ')
+    try:
+        return field[number]
+    except Exception as err:
+        return err
 
 # count the number of selected items
 def count_selected(field):
-    if type(field) == list or type(field) == tuple:
-        return len(field)
-    elif type(field)== int or type(field)== float:
-        return 1
-    else:
-        return len(field.split())
+    field = field.split(' ')
+    return len(field)
 
 # concatenate strings
 def concat(field1, field2,*therest):
@@ -95,7 +83,7 @@ def date_time(string):
 
 #Converts date and/or time into a string
 def format_date_time(field, date_format):
-    dt = parser.parse(field).strftime(date_format)
+    dt = parser.parse(str(field)).strftime(date_format)
     return dt
 #today's date
 def today():
@@ -108,6 +96,7 @@ def now():
 
 def date_N_days_ago(N):
     return datetime.now() - timedelta(days=N)
+
 # return the number of days
 def days(timedelta):
     try:
@@ -127,7 +116,6 @@ def is_number(s):
         return True
     except ValueError:
         return False
-
 
 
 #Check if argument is date
@@ -219,6 +207,7 @@ def balanced_par(myStr):
 
 # get a function from string
 def get_func(string, func):
+        
         f_idx   = string.index(func) # index of the function
         new_str = string[f_idx+len(func) : ] # new short string
         char_i = 0 # initialize char counter
@@ -238,27 +227,44 @@ def get_func(string, func):
 
             
 # eval functions in string               
-def evalfunc_str(string,df_xls,funcs = ['jr_choice_name','date_check','count_selected','is_number','now', 'today','format_date_time','date_time','date','string','number','IF', 'regex','coalesce','substr','concat','count_selected','selected_at','string_length','selected','uuid','round']):
+def evalfunc_str(string,df_xls,funcs = ['jr_choice_name','date_check','count_selected','is_number','now', 'today','format_date_time','date_time','date','string','number','IF', 'regex','coalesce','substr','concat','count_selected','selected_at','string_length','selected','uuid','round','int']):
     nan = 'nan'
     for func in funcs:
-        occ = string.count(func)# count occurence of func in string
+        #print('evalFuncStr: ',string)
+        occ = str(string).count(func)# count occurence of func in string
         if occ > 0:
             for i in range(occ):
-                func_str = get_func(string, func) # get given function in string
+                
+                
+                if func in string:
+                    func_str = get_func(string, func)
+                else:
+                    func_str = None
+
                 if func_str != None:
                     try:
                         result = eval(func_str) # evaluate function
                         string= string.replace(func_str, result) # replace function with the evluated result
-                    except:
+                        
+                        #print('Function: %s Result: %s'%(func_str, result))
+                    
+                    except Exception as err:
+                        print(err)
                         string = string
     return string          
 
 # change the syntax of xls function to pyhton               
 def format_funcstr(string,func):
     occ = string.count(func)# count occurence of func in string
+    
     if occ > 0:
         for i in range(occ):
-            func_str = get_func(string, func)
+            #print('occ: ',i)
+            if func in string:
+                func_str = get_func(string, func)
+            else:
+                func_str = None
+                
             if func_str != None:
                 
                 arg    = func_str[len(func): len(func_str)]
@@ -270,6 +276,7 @@ def format_funcstr(string,func):
                 new_func = new_func.replace('-','_')
                 
                 string = string.replace(concat(func,arg),concat(new_func,new_arg))
+                #print(string)
                 
     #print('ffs: ', string)
 
