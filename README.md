@@ -8,7 +8,7 @@ This a free and open source python script to monitor, manage, and clean collecte
 - [SimControl](https://new.simcontrol.co.za/) or [flickswitch](https://www.flickswitch.co.za) (Optional) [Paid] - Airtime, SMS and Data bundles distribution. 
 - [Dropbox](http://dropbox.com)(Optional) [Free] - online backup of collected and clean data.
 
-If you have your own server instead of surveyCTO, where the data is stored to and secured in real time, provide a csv link to the data. However, ensure that there are **CompletionDate** and **KEY** for the storage timestamp and id respectively.
+If you have your own server instead of surveyCTO, where the data is stored to and secured in real time, provide a csv link to the data. However, ensure that there are **CompletionDate** and **KEY** column names for the storage timestamp and submission id respectively.
 
 # 1. Google Sheet Setup
 This section provides an overview of the necessary and optional sheets needed to monitor and clean data or send incentives. View the [template](https://docs.google.com/spreadsheets/d/1J7vr1fY8PlsXcAlCewMDBbMsxdHICZPR7CoPby-MYBs/edit) for guidance.
