@@ -17,7 +17,7 @@ This section provides an overview of the necessary and optional sheets needed to
 It is compulsory to have the following worksheets for pykapa to monitor data collection and post messages on Slack.
 
 ### [survey](https://docs.google.com/spreadsheets/d/1J7vr1fY8PlsXcAlCewMDBbMsxdHICZPR7CoPby-MYBs/edit)
-This worksheet is very important as it is the interface for creating questions and structure for your questionnaire. You will have to add the **dashboard_state** column and set the values to TRUE for fields that you want visualise on Data Studio.
+This worksheet is very important as it is the interface for creating questions and structure for your questionnaire. You will have to add the **dashboard_state** column and set the values to TRUE for fields that you want to visualise on Data Studio.
 
 ### [choices](https://docs.google.com/spreadsheets/d/1J7vr1fY8PlsXcAlCewMDBbMsxdHICZPR7CoPby-MYBs/edit#gid=1259247300)
 You need this worksheet to be able to pull the label for select and select_multiple fields using the `jr:choice-name(${field}, '${field}')` such that your messages on Slack are readable.
