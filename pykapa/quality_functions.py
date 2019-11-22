@@ -14,6 +14,7 @@ import unicodedata
 from requests.auth import HTTPDigestAuth
 from xls_functions import *
 from incentives_functions import *
+from gen_funcs import *
 import slackclient
 from oauth2client import file, client, tools
 from locale import atof
