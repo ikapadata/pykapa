@@ -61,7 +61,7 @@ After creating a session for your form navigate to the folder containing the pyt
     $ cd pykapa/pykapa
     $ python3 qcMessenger.py
 
-You will then be prompted to enter the google sheet link, surveyCTO credentials, slack bot token, slack channel to post error messages that the script encounters during execution.
+You will then be prompted to enter the google sheet link, surveyCTO credentials, slack bot token, slack channel to post error messages that the script encounters during execution. The slack bot token and surveyCTO credentials will be remembered, so you will only enter them once.
 
 Thereafter, you can exit the session to have it running in the backend without interruption. To exit the session do the following hold the keys `control + b` thereafter click `d`. Once you have exited you can create another session for another form or exit the terminal.
 
