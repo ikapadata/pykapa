@@ -41,13 +41,13 @@ This worksheet allows you to clean data by correcting mistakes made during data 
 This worksheet allows you incentivise respondents with airtime, data bundles or sms bundles. You have to create this worksheet and its columns. Create the **incentive_type**, **amount**, **contact**, **network**, **recharge_count**, **flickswitch_api_key**, and **messenger** columns.
 
 ### [to_dropbox](https://docs.google.com/spreadsheets/d/1yZfpCAV1BHkHBwfncnvZebFN0xRcUyOa6j6gcwkBlxk/edit#gid=86807683)
-This worksheet allows you to back your data on [Dropbox](http://dropbox.com). You have to create this worksheet and its columns. It consist of only two colums, **dropbox_dir** and **dropbox_token**. View [generate dropbox token](https://blogs.dropbox.com/developers/2014/05/generate-an-access-token-for-your-own-account/) to follow the instruction on how to obtain an access token.
+This worksheet allows you to back your data on [Dropbox](http://dropbox.com). You have to create this worksheet and its columns. It consist of only two colums, **dropbox_dir** and **dropbox_token**. View [generate dropbox token](https://blogs.dropbox.com/developers/2014/05/generate-an-access-token-for-your-own-account/) to follow the instructions on how to obtain an access token.
 
 ## 1.3. **Programmatically Created Sheets**
 The following worksheets are created automatically when the program is running. You must not create any worksheet with the following names. 
 
 ### [dashboard](https://docs.google.com/spreadsheets/d/1J7vr1fY8PlsXcAlCewMDBbMsxdHICZPR7CoPby-MYBs/edit#gid=951543888)
-This worksheet is created automatically if the survey or messages worksheets have the **dashboard_state** column with TRUE values. You can then use the data in this worksheet to create dashboards using Data Studio. You can add new columns with formulas to calculate or format values to be used in the dashboard. When using [ARRAYFORMULA()](https://support.google.com/docs/answer/3093275?hl=en-GB) you will have to add the following formula in the script editor to clear the worksheet and keep the formula alive when new records are written. Substitute **RANGE_OF_NEW_COLUMNS** with the correct range or view the template for guidance.
+This worksheet is created automatically if the survey or messages worksheets have the **dashboard_state** column with TRUE values. You can then use the data in this worksheet to create dashboards using Data Studio. You can add new columns with formulas to calculate or format values to be used in the dashboard. When using [ARRAYFORMULA()](https://support.google.com/docs/answer/3093275?hl=en-GB) you will have to add the following formula in the script editor to clear the worksheet and keep the formula alive when new records are written. Click the menu Tools > Script editor... to open a new tab with the code editor window, paste the code and substitute **RANGE_OF_NEW_COLUMNS** with the correct range.
 
 ```javascript
 function clear_cells () {
