@@ -47,7 +47,7 @@ This worksheet allows you to back your data on [Dropbox](http://dropbox.com). Yo
 The following worksheets are created automatically when the program is running. You must not create any worksheet with the following names. 
 
 ### [dashboard](https://docs.google.com/spreadsheets/d/1J7vr1fY8PlsXcAlCewMDBbMsxdHICZPR7CoPby-MYBs/edit#gid=951543888)
-This worksheet is created automatically if the survey or messages worksheets have the **dashboard_state** column with TRUE values. You can then use the data in this worksheet to create dashboards using Data Studio. You can add new columns with formulas to calculate or format values to be used in the dashboard. When using [ARRAYFORMULA()](https://support.google.com/docs/answer/3093275?hl=en-GB) you will have to add the following formula in the script editor to clear the worksheet and keep the formula alive when new records are written. Substitute **RANGE_OF_NEW_COLUMNS** with the correct range.
+This worksheet is created automatically if the survey or messages worksheets have the **dashboard_state** column with TRUE values. You can then use the data in this worksheet to create dashboards using Data Studio. You can add new columns with formulas to calculate or format values to be used in the dashboard. When using [ARRAYFORMULA()](https://support.google.com/docs/answer/3093275?hl=en-GB) you will have to add the following formula in the script editor to clear the worksheet and keep the formula alive when new records are written. Substitute **RANGE_OF_NEW_COLUMNS** with the correct range or view the template for guidance.
 
 ```javascript
 function clear_cells () {
