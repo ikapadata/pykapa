@@ -58,7 +58,7 @@ function clear_cells () {
    activeSheet.getRange("RANGE_OF_NEW_COLUMNS").clearContent();
 }
 ```
-![onChange Trigger](onChange Trigger.png)
+![onChange Trigger]("onChange Trigger.png")
 
 
 Remember to set the dashboard_state to TRUE for the fields you're interested in displaying in the dashboard. If you want to set new fields after the dashboard worksheet is created, you must create columns with the same field names in the dashboard worksheet after you've set the fields' dashboard_state to TRUE. However, they will only be populated for new observations. You will have to restart the script, by deleting the project folder and rerunning the script, to populate for old observations as well.
