@@ -47,7 +47,9 @@ This worksheet allows you to back your data on [Dropbox](http://dropbox.com). Yo
 The following worksheets are created automatically when the program is running. You must not create any worksheet with the following names. 
 
 ### [dashboard](https://docs.google.com/spreadsheets/d/1J7vr1fY8PlsXcAlCewMDBbMsxdHICZPR7CoPby-MYBs/edit#gid=951543888)
-This worksheet is created automatically if the survey or messages worksheets have the **dashboard_state** column with TRUE values. You can then use the data in this worksheet to create dashboards using Data Studio. You can add new columns with formulas to calculate or format values to be used in the dashboard. When using [ARRAYFORMULA()](https://support.google.com/docs/answer/3093275?hl=en-GB) you will have to add the following formula in the script editor to clear the worksheet and keep the formula alive when new records are written. Click the menu Tools > Script editor... to open a new tab with the code editor window, paste the code and substitute **RANGE_OF_NEW_COLUMNS** with the correct range.
+This worksheet is created automatically if the survey or messages worksheets have the **dashboard_state** column with TRUE values. You can then use the data in this worksheet to create dashboards using Data Studio. There are two limitations to note: (1) All data is written as strings and (2) the [ARRAYFORMULA()](https://support.google.com/docs/answer/3093275?hl=en-GB) breaks when new data is written on the sheet. To solve (1) add new columns to format the data to the correct data type and apply ARRAYFORMULA(). To solve (2) you will have to (a) add to copy and paste fucntion below in the script editor, in the sheet, and (b) add the onChange trigger for the function to clear the cells below the ARRAYFORMULA().
+
+Click the menu Tools > Script editor... to open a new tab with the code editor window, paste the code and substitute **RANGE_OF_NEW_COLUMNS** with the correct range.
 
 ```javascript
 function clear_cells () {
@@ -56,6 +58,9 @@ function clear_cells () {
    activeSheet.getRange("RANGE_OF_NEW_COLUMNS").clearContent();
 }
 ```
+![onChange Trigger](https://media.licdn.com/dms/image/C560BAQHz3Rp3JTrw9A/company-logo_200_200/0?e=2159024400&v=beta&t=6UTdAG1WcAZti0ul2qO6BaqPXcxOkMp2RLlkLsyYL2k)
+
+
 Remember to set the dashboard_state to TRUE for the fields you're interested in displaying in the dashboard. If you want to set new fields after the dashboard worksheet is created, you must create columns with the same field names in the dashboard worksheet after you've set the fields' dashboard_state to TRUE. However, they will only be populated for new observations. You will have to restart the script, by deleting the project folder and rerunning the script, to populate for old observations as well.
 # 2. Run Python Script
 
