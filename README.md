@@ -58,6 +58,8 @@ function clear_cells () {
    activeSheet.getRange("RANGE_OF_NEW_COLUMNS").clearContent();
 }
 ```
+
+In the script editor click the menu Edit > Current project's triggers.., then click Add trigger and set it according to the image below.
 ![onChange Trigger](https://github.com/ikapadata/pykapa/blob/master/onChange%20Trigger.png)
 
 
