@@ -47,7 +47,7 @@ This worksheet allows you to back your data on [Dropbox](http://dropbox.com). Yo
 ## 1.3. **Programmatically Created Sheets**
 The following worksheets are created automatically when the program is running. You must not create any worksheet with the following names. 
 
-### [dashboard](https://docs.google.com/spreadsheets/d/1J7vr1fY8PlsXcAlCewMDBbMsxdHICZPR7CoPby-MYBs/edit#gid=951543888)
+### [dashboard](https://docs.google.com/spreadsheets/d/1_DcvojpHzpZixOts6BApy0neiqtwjJkhVdMBqJVucgM/edit#gid=156439626)
 This worksheet is created automatically if the survey or messages worksheets have the **dashboard_state** column with TRUE values. You can then use the data in this worksheet to create dashboards using Data Studio. There are two limitations to note: (1) All data is written as strings and (2) the [ARRAYFORMULA()](https://support.google.com/docs/answer/3093275?hl=en-GB) breaks when new data is written on the sheet. To solve (1) add new columns to format the data to the correct data type and apply ARRAYFORMULA(). To solve (2) you will have to (a) copy and paste fucntion below in to the script editor and (b) add the onChange trigger for the function to clear the cells below the ARRAYFORMULA().
 
 Click the menu Tools > Script editor... to open a new tab with the code editor window, paste the code and substitute **RANGE_OF_NEW_COLUMNS** with the correct range.
