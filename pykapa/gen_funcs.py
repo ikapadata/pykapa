@@ -1,5 +1,6 @@
 import os
 import json
+import pandas as pd
 
 def user_inputs():
     # google sheet url
@@ -105,3 +106,17 @@ def create_json_db(filepath):
     # create empty database table if it doesn't exist
     if filename not in filelist:
         create_empty_json(filepath)
+
+# writing new data to csv file     
+def local_csv(filepath, df_survey):
+    if os.path.isfile(filepath):
+        print('\nAPPENDING NEW DATA:')
+        df_0 = pd.read_csv(filepath)
+        # append unique data
+        df_ = pd.concat([df_0, df_survey]).drop_duplicates(subset = ['KEY'], keep = 'first')[list(df_survey)]
+        df_str = df_.astype(str).replace('nan','',regex=True)
+        df_str.to_csv(filepath, index= False)
+    else:
+        print('\nWRITING NEW DATA:')
+        df_str = df_survey.astype(str).replace('nan','',regex=True)
+        df_str.to_csv(filepath, index= False)

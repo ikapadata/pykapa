@@ -13,14 +13,13 @@ import sys
 import time
 import unicodedata
 
+from quality_functions import df_worksheet
+
 if sys.version.startswith('2'):
     input = raw_input  # noqa: E501,F821; pylint: disable=redefined-builtin,undefined-variable,useless-suppression
 
 import dropbox
 
-# OAuth2 access token.  TODO: login etc.
-
-#TOKEN = 'BfFynX0z1LAAAAAAAAAMK6UVluT1IICjC7e4I3y2uFb_R3Bf9i9gf-SgBkns-4FM'
 
 def dbx_parse(TOKEN):
     parser = argparse.ArgumentParser(description='Sync ~/Downloads to Dropbox')
@@ -168,15 +167,17 @@ def upload(dbx, fullname, folder, subfolder, name, overwrite=True):
     Return the request response, or None in case of error.
     """
     path = '/%s/%s/%s' % (folder, subfolder.replace(os.path.sep, '/'), name)
-    print('dbx path: ',path)
-    print('dbx: ',dbx)
-    print('fullname: ',fullname)
+    #print('dbx path: ',path)
+    #print('dbx: ',dbx)
+    print('LOCAL FILEPATH: %s'%fullname)
     while '//' in path:
         path = path.replace('//', '/')
     mode = (dropbox.files.WriteMode.overwrite
             if overwrite
             else dropbox.files.WriteMode.add)
     mtime = os.path.getmtime(fullname)
+    
+    print('DROPBOX FILEPATH: %s\n' %path)
     with open(fullname, 'rb') as f:
         data = f.read()
     with stopwatch('upload %d bytes' % len(data)):
@@ -242,7 +243,7 @@ def stopwatch(message):
         print('Total elapsed time for %s: %.3f' % (message, t1 - t0))
 
 # upload files to dropbox
-def dbx_upload(dir_local,dir_dropbox,dbx_token):
+def dropbox_upload(dir_local,dir_dropbox,dbx_token):
     """Main program.
     Parse command line, then iterate over files and directories under
     rootdir and upload all files.  Skips some temporary files and
@@ -261,8 +262,6 @@ def dbx_upload(dir_local,dir_dropbox,dbx_token):
 
     folder  = dir_dropbox #args.folder
     rootdir = dir_local #os.path.expanduser(args.rootdir)
-    print('Dropbox folder name: ', folder)
-    print('Local directory: ', rootdir)
 
     dbx = dropbox.Dropbox(dbx_token)
 
@@ -271,7 +270,7 @@ def dbx_upload(dir_local,dir_dropbox,dbx_token):
         subfolder = dn[len(rootdir):].strip(os.path.sep)
         listing = list_folder(dbx, folder, subfolder)
         print('Descending into', subfolder, '...')
-        print('dn: ',dn)
+        #print('dn: ',dn)
         #print(files)
         
         # First do all the files.
@@ -280,9 +279,19 @@ def dbx_upload(dir_local,dir_dropbox,dbx_token):
             fullname = os.path.join(dn, name)
             if '.json' not in name:
                 upload(dbx, fullname, folder, subfolder, name)
-            
- 
-'''
-if __name__ == '__main__':
-    main()
-'''
+
+# dropbox upload function
+def to_dropbox(gsheet, form_id):
+    try:
+        ws_dropbox = gsheet.worksheet('to_dropbox')
+        df_dropbox = df_worksheet(ws_dropbox)
+    except Exception as err:
+        df_dropbox = None
+        print("`Dropbox Exception:` %s"%err)
+               
+    dir_lcl = './data/%s'% form_id
+    if df_dropbox is not None and os.path.exists(dir_lcl):
+        dropbox_upload( dir_local = dir_lcl, dir_dropbox = df_dropbox.at[0,'dropbox_dir'], dbx_token = df_dropbox.at[0,'dropbox_token'])
+    else:
+        print("`Dropbox:` This dataset is not backed-up on Drobox. It is advised that you back it up on Dropbox to easily share it with stakeholders.")
+           

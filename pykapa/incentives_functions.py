@@ -121,7 +121,7 @@ def recharge_count(contact,api_key, prodType = 'airtime', status = 'success', r_
     
     return recharges
 
-# Define 'airtime'function to send airtime to msisidn and return metadata
+# Define 'airtime' function to send airtime to msisidn and return metadata
 def airtime(api_key, msisdn, network, amount, ref=None):
     if ref == None:
         ref = str(uuid())

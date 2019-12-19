@@ -225,7 +225,6 @@ def get_func(string, func):
                     return func_0
                  
 
-            
 # eval functions in string               
 def evalfunc_str(string,df_xls,funcs = ['jr_choice_name','date_check','count_selected','is_number','now', 'today','format_date_time','date_time','date','string','number','IF', 'regex','coalesce','substr','concat','count_selected','selected_at','string_length','selected','uuid','round','int']):
     nan = 'nan'
