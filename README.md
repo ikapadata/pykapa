@@ -12,7 +12,7 @@ This a free and open source python script to monitor, manage, and clean collecte
 If you have your own server instead of surveyCTO, where the data is stored to and secured in real time, provide a csv link to the data. However, ensure that there are **CompletionDate** and **KEY** column names for the storage timestamp and submission id respectively.
 
 # 1. Google Sheet Setup
-This section provides an overview of the necessary and optional sheets needed to monitor and clean data or send incentives. View the [template](https://docs.google.com/spreadsheets/d/1J7vr1fY8PlsXcAlCewMDBbMsxdHICZPR7CoPby-MYBs/edit) for guidance.
+This section provides an overview of the necessary and optional sheets needed to monitor and clean data or send incentives. View the [template](https://docs.google.com/spreadsheets/d/1_DcvojpHzpZixOts6BApy0neiqtwjJkhVdMBqJVucgM/edit#gid=1956562684) for guidance.
 
 ## 1. 1. **Necessary Sheets**
 It is compulsory to have the following worksheets for pykapa to monitor data collection and post messages on Slack.
