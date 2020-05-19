@@ -1,7 +1,7 @@
-from quality_functions import surveyCTO_download, dct_xls_data, qc_fields, qc_messenger, slack_post, save_corrections, open_google_sheet
-from gen_funcs import user_inputs, read_json_file, local_csv
-from drop_box import to_dropbox
-from xls_functions import date_time, now
+from pykapa.quality_functions import surveyCTO_download, dct_xls_data, qc_fields, qc_messenger, slack_post, save_corrections, open_google_sheet
+from pykapa.gen_funcs import user_inputs, read_json_file, local_csv
+from pykapa.drop_box import to_dropbox
+from pykapa.xls_functions import date_time, now
 import pandas as pd
 import time
 

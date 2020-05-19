@@ -1,5 +1,6 @@
 from dateutil import parser
 from datetime import datetime, timedelta
+import re
 import uuid as UUID
 
 # check if the selected field is equal to the expected value
@@ -46,7 +47,6 @@ def coalesce(field1, field2):
         return field2
 
 
-import re
 #Returns true or false depending on whether the field matches the regular expression specified
 def regex(field, expression):
     if re.search(expression,field) != None:

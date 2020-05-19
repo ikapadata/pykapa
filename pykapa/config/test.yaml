@@ -1,0 +1,7 @@
+data:
+  somepath: some/long/path
+  something: true
+scto_credentials:
+  name: something
+  password: something
+google_sheet_url: someurl

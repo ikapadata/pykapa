@@ -1,5 +1,5 @@
 import requests
-from xls_functions import concat, format_date_time, evalfunc_str, is_in, now, uuid
+from pykapa.xls_functions import concat, format_date_time, evalfunc_str, is_in, now, uuid
 import json
 import requests
 import time
@@ -9,7 +9,7 @@ import pandas as pd
 from copy import deepcopy
 import re
 
-from gen_funcs import *
+from pykapa.gen_funcs import *
 #--------------------------------------------------------------------------------------------------------------------------------
 #                                                   sim control functions
 #--------------------------------------------------------------------------------------------------------------------------------
@@ -84,7 +84,7 @@ def simcontact(msisdn):
         sub_1 = msisdn[0:9]
         msisdn = msisdn[-1] + sub_1
 
-    contact = remove_specialchar(msisdn) # remove special characters
+    contact = remove_specialchar(msisdn)  # remove special characters
     # format contact
     if contact[0] =='0' and len(contact) == 10:
         return concat('+27',contact[1:len(contact)])

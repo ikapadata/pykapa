@@ -13,12 +13,14 @@ import sys
 import time
 import unicodedata
 
-from quality_functions import df_worksheet
-
-if sys.version.startswith('2'):
-    input = raw_input  # noqa: E501,F821; pylint: disable=redefined-builtin,undefined-variable,useless-suppression
-
+from pykapa.quality_functions import df_worksheet
 import dropbox
+
+#python 2 should not be supported
+
+# if sys.version.startswith('2'):
+#     input = raw_input  # noqa: E501,F821; pylint: disable=redefined-builtin,undefined-variable,useless-suppression
+
 
 
 def dbx_parse(TOKEN):

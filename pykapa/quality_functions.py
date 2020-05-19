@@ -1,22 +1,17 @@
-import json
-import gspread
-import os
 import os.path
-import json
-import requests
-import pytz
-import numpy as np
-import pandas as pd
-import re
-import unicodedata
 
-from requests.auth import HTTPDigestAuth
-from xls_functions import *
-from incentives_functions import *
-from gen_funcs import *
+import gspread
+import numpy as np
+import pytz
 import slackclient
-from oauth2client import file, client, tools
 from gspread_dataframe import get_as_dataframe
+from oauth2client import file, client, tools
+from requests.auth import HTTPDigestAuth
+
+from pykapa.incentives_functions import *
+from pykapa.xls_functions import *
+
+
 #--------------------------------------------------------------------------------------------------------------------------------
 #                                                      XLS Form functions
 #--------------------------------------------------------------------------------------------------------------------------------
@@ -706,17 +701,16 @@ def qc_messenger(df_survey,dct_xls,qc_track, admin_channel = None, google_sheet_
 def qc_manager(google_sheet_url,username,password,server):
     # create incentive database tables      
     excess_recharge_dir = make_relative_dir('data','db','recharges','excess_recharges.json') #.../data/db/recharges/excess_recharges.json
-    create_json_db(excess_recharge_dir)
+    create_json_file(excess_recharge_dir)
 
     recharge_dir = make_relative_dir('data','db','recharges','recharges.json') #.../data/db/recharges/recharges.json
-    create_json_db(recharge_dir)
+    create_json_file(recharge_dir)
 
     while True:
         dct_xls    = dct_xls_data(google_sheet_url)  # retrieve quality control and incentive data from xls form as dataframe
         df_survey = surveyCTO_download(server,username,password,dct_xls['form_id']) # retrieve data from surveyCTO json file as dataframe
         qc_messenger(df_survey,dct_xls) # perform perform quality control, post messages, and send incentives
 
-        import time
         print('The End')
         time.sleep(200)
         
