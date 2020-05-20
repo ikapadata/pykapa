@@ -1,7 +1,10 @@
-data:
-  somepath: some/long/path
-  something: true
-scto_credentials:
-  name: something
-  password: something
-google_sheet_url: someurl
+slack:
+  token: something
+  error_channel: errors_channel_name
+google:
+  sheet_url: url
+scto:
+  username: email
+  password: password
+  host: host/server_name
+

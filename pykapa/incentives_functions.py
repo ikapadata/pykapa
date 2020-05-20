@@ -5,7 +5,6 @@ import requests
 import time
 import os
 import ast
-import pandas as pd
 from copy import deepcopy
 import re
 
