@@ -83,7 +83,7 @@ def simcontact(msisdn):
         sub_1 = msisdn[0:9]
         msisdn = msisdn[-1] + sub_1
 
-    contact = remove_specialchar(msisdn)  # remove special characters
+    contact = remove_specialchar(msisdn) # remove special characters
     # format contact
     if contact[0] =='0' and len(contact) == 10:
         return concat('+27',contact[1:len(contact)])

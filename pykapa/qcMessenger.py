@@ -115,6 +115,12 @@ if google_sheet_url != '' and scto_username != '' and scto_password != '' and se
                         save_corrections(gsheet, csv_path, form_id)  # perform corrections and save file
                         to_dropbox(gsheet, form_id)  # upload files local datasets to dropbox
 
+                        try:
+                            df_xpt = dct_xls['export']
+                            # read survey worksheet
+                            df_svy = dct_xls['select']
+                        except Exception as err:
+                            print('\nExport Worksheet Exception: %s' %err)
 
                 except Exception as err:
                     err_msg = '`Warning:` \n%s. \n\nYou may have to follow up on this. The backend is still running' % err

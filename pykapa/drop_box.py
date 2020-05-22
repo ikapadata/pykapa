@@ -22,6 +22,39 @@ import dropbox
 #     input = raw_input  # noqa: E501,F821; pylint: disable=redefined-builtin,undefined-variable,useless-suppression
 
 
+#get user id to send in messages
+def slack_user_id(string):
+    json_bot = read_json_file('./data/authentication/slack/bot_token.json')
+    bot_token = json_bot['BOT_TOKEN']
+    sc = slackclient.SlackClient(bot_token)
+
+    users = sc.api_call("users.list")['members']
+    df =  pd.DataFrame(users)
+    for i in df.index.values:
+        string = string.replace("<@%s>"%df.at[i,'name'],"<@%s>"%df.at[i,'id'])
+
+    return string
+
+#function to post messages to slack
+def slack_post(channel_name, slack_msg):
+    json_bot = read_json_file('./data/authentication/slack/bot_token.json')
+    bot_token = json_bot['BOT_TOKEN']
+    slack_client = slackclient.SlackClient(bot_token)
+    try:
+        slk_txt = slack_user_id(slack_msg)
+    except Exception as err:
+        print(err)
+        slk_txt  = slack_msg
+    slack_client.api_call('chat.postMessage', channel=str(channel_name).lower(), text=slk_txt)
+
+#convert UTC to SAST timezone
+def timezone_sast(date_str):
+    dt = date_time(date_str)
+    fmt = '%b %d, %Y   %H:%M:%S'
+    utc_dt = pytz.utc.localize(dt)
+    #convert utc to jhb timezone
+    jhb = pytz.timezone('Africa/Johannesburg')
+    return  utc_dt.astimezone(jhb).strftime(fmt)
 
 def dbx_parse(TOKEN):
     parser = argparse.ArgumentParser(description='Sync ~/Downloads to Dropbox')
