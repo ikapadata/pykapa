@@ -29,6 +29,20 @@ slack_client = PykapaSlackClient(slack_token, err_chnl)
 #    2.                                              Quality Control
 # --------------------------------------------------------------------------------------------------------------------
 
+def find_latest_survey_recorded():
+    # find the last save for current data task (currently saved in json file)
+    date_old = None
+    # read json tracker
+    dir_x = './data/projects/%s/qctrack.json' % form_id
+    qc_track = read_json_file(dir_x)
+
+    # filter data by CompletionDate
+    if qc_track['CompletionDate'] != '':
+        # date from the JSON file that stores the last record
+        date_old = date_time(qc_track['CompletionDate'])
+    return date_old
+
+
 def get_csv_path_for_form(form_id):
     csv_filename = '{}.csv'.format(form_id)
     csv_path = '{}/{}/{}'.format(config_paths.get("projects_folder"), form_id, csv_filename)
@@ -61,25 +75,18 @@ if google_sheet_url != '' and scto_username != '' and scto_password != '' and se
                         csv_path = get_csv_path_for_form(form_id)
 
                         # Download data from surveyCTO
-                        df_survey = surveyCTO_download(server, scto_username, scto_password, form_id,
-                                                       err_chnl)  # retrieve data from surveyCTO as dataframe
+                        # retrieve data from surveyCTO as dataframe
+                        df_survey = surveyCTO_download(server, scto_username, scto_password, form_id, err_chnl)
 
                         if df_survey is not None:
 
                             if not df_survey.empty and list(df_survey) != ['error']:
-                                # read json tracker
 
-                                dir_x = './data/projects/%s/qctrack.json' % form_id
-                                qc_track = read_json_file(dir_x)
+                                date_old = find_latest_survey_recorded()
 
-                                # filter data by CompletionDate
-                                if qc_track['CompletionDate'] != '':
-                                    if type(qc_track['CompletionDate']) == str:
-                                        df_survey['CompletionDate'] = pd.to_datetime(df_survey['CompletionDate'])
+                                df_survey['CompletionDate'] = pd.to_datetime(df_survey['CompletionDate'])
 
-                                    date_old = date_time(qc_track[
-                                                             'CompletionDate'])  # date from the JSON file that stores the last record
-                                    df_survey = df_survey[df_survey.CompletionDate > date_old]
+                                df_survey = df_survey[df_survey.CompletionDate > date_old]
 
                                 append_to_csv(csv_path, df_survey)
 
@@ -96,8 +103,8 @@ if google_sheet_url != '' and scto_username != '' and scto_password != '' and se
                                     break
 
                                 # perform quality control and post messages on slack
-                                qc_messenger(df_surv, dct_xls, qc_track, err_chnl,
-                                             google_sheet_url)  # perform quality control, post messages, and send incentives
+                                # perform quality control, post messages, and send incentives
+                                qc_messenger(df_surv, dct_xls, qc_track, err_chnl, google_sheet_url)
 
                         else:
                             logger.info('surveyCTO data set is unrecognized.')

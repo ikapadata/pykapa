@@ -4,8 +4,8 @@ python:
   - "3.6"
 
 install:
-  - pip install -r requirement.txt
+  - pip install -r requirements.txt
   - pip install pytest
 
 script:
-  - pytest pykapa/qcMessenger.py
+  - pytest pykapa/tests/tests.py

@@ -10,13 +10,99 @@ from requests.auth import HTTPDigestAuth
 
 from pykapa.gen_funcs import make_relative_dir
 from pykapa.incentives_functions import *
-from pykapa.quality_functions import xls2py, xls_merge_ws
 from pykapa.controllers.slack import slack_post, PykapaSlackClient
 from pykapa.xls_functions import *
 import pandas as pd
 
 
-slack_client = PykapaSlackClient()
+# slack_client = PykapaSlackClient()
+
+def lst_reduce(df_msg_xls, df_msgset_xls):
+    # list of headers
+    lst_msg = list(df_msg_xls)
+    lst_msgset = list(df_msgset_xls)
+
+    for element in lst_msg:
+        if element in lst_msgset:
+            lst_msgset.remove(element)
+
+    return lst_msgset
+
+
+# append columns
+def append_col(dataframe, header):
+    if type(header) == list:
+        for element in header:
+            dataframe[element] = ''
+    elif header.replace(' ', '') == '':
+        dataframe = dataframe
+    else:
+        dataframe[header] = ''
+
+    return dataframe
+
+
+# merge data from two worksheets according to channel_id into one dataframe
+def xls_merge_ws(df_msg_xls, df_msgset_xls):
+    lst_msg_id = df_msg_xls.loc[:, 'channel_id']  # list of message IDs in messages worksheet
+    lst_chn_id = df_msgset_xls.loc[:, 'channel_id']  # list of message IDs in messages_settings worksheet
+
+    lst_headers = lst_reduce(df_msg_xls, df_msgset_xls)  # list of headers to append
+
+    # append headers
+    df_msg_xls = append_col(df_msg_xls, lst_headers)
+    # merge the two datasets into one dataframe
+    for element in lst_headers:
+        for i in range(len(lst_chn_id)):
+            for j in range(len(lst_msg_id)):
+                if lst_msg_id[j] == lst_chn_id[i]:
+                    df_msg_xls.loc[j, element] = df_msgset_xls.loc[i, element]
+
+    return df_msg_xls
+
+
+# convert xls syntax to python syntax
+def xls2py(dataframe):
+    for i in dataframe.index.values:
+        for element in list(dataframe):
+            string = dataframe.loc[i, element]
+            # print(string)
+            if type(string) == str:
+                # 1.1 operators
+                dataframe.loc[i, element] = dataframe.loc[i, element].replace('==', '=')
+                dataframe.loc[i, element] = dataframe.loc[i, element].replace('=', '==')
+                dataframe.loc[i, element] = dataframe.loc[i, element].replace('>==', '>=')
+                dataframe.loc[i, element] = dataframe.loc[i, element].replace('!==', '!=')
+                dataframe.loc[i, element] = dataframe.loc[i, element].replace('<==', '<=')
+                dataframe.loc[i, element] = dataframe.loc[i, element].replace(' div ', '/')
+                dataframe.loc[i, element] = dataframe.loc[i, element].replace(' mod ', '%')
+                dataframe.loc[i, element] = dataframe.loc[i, element].replace('\\n', '\n')
+                dataframe.loc[i, element] = dataframe.loc[i, element].replace("'${", "'col{")
+                dataframe.loc[i, element] = dataframe.loc[i, element].replace('${', 'var{')
+                dataframe.loc[i, element] = dataframe.loc[i, element].replace('""', str(np.NaN))
+                dataframe.loc[i, element] = dataframe.loc[i, element].replace("''", str(np.NaN))
+
+                # 1.2. functions
+                dataframe.loc[i, element] = dataframe.loc[i, element].replace('string-length', 'string_length')
+                dataframe.loc[i, element] = dataframe.loc[i, element].replace('selected-at', 'selected_at')
+                dataframe.loc[i, element] = dataframe.loc[i, element].replace('count-selected', 'count_selected')
+                dataframe.loc[i, element] = dataframe.loc[i, element].replace('if(', 'IF(')
+                dataframe.loc[i, element] = dataframe.loc[i, element].replace('date-time', 'date_time')
+                dataframe.loc[i, element] = dataframe.loc[i, element].replace('format-date-time', 'format_date_time')
+
+                # print('00 - %s: %s'%(element,dataframe.loc[i,element]))
+                dataframe.loc[i, element] = dataframe.loc[i, element].replace(dataframe.loc[i, element],
+                                                                              format_funcstr(dataframe.loc[i, element],
+                                                                                             'jr:choice-name'))
+                '''
+                try:
+                    dataframe.loc[i,element] = dataframe.loc[i,element].replace(dataframe.loc[i,element], format_funcstr(dataframe.loc[i,element], 'jr:choice-name'))
+                except Exception as err:
+                    print(err)
+                '''
+                # print('01 - %s: %s'%(element,dataframe.loc[i,element]))
+
+    return dataframe
 
 
 def read_messages_worksheet(google_sheet):
