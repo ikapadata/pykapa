@@ -1,6 +1,8 @@
 import os
 import json
 import pandas as pd
+import validators
+import requests
 
 def user_inputs():
     # google sheet url
@@ -36,7 +38,34 @@ def user_inputs():
     print('\nEnter the channel name to post python errors.')
     err_chnl = input('Channel Name: ').lower()
     
-    return {'SHEET_LINK':google_sheet_url,'EMAIL':email,'PASSWORD':password,'SERVER':server, 'ERR_CHNL':err_chnl}
+    
+    
+    err = ''
+    # add correct prefix to validate links
+    if 'http' not in google_sheet_url and 'docs.google' in str(google_sheet_url).lower():
+        google_sheet_url = 'https://' + google_sheet_url
+ 
+    if 'http' not in server and 'surveycto.com'in str(server).lower():
+        server = 'https://' + server
+
+    # validate the link to google sheet
+    try:
+        google_resp = requests.get(google_sheet_url)     
+    except:
+        err = err + '*GoogleSheet:* Your google sheet link is invalid. Please enter a valid link to continue.\n'
+        
+    # validate the link to  server
+    try:
+        server_resp = requests.get(server)
+    except:
+        err = err + '*SurveyCTO:* the server name or credentials are incorrect. Please enter correct details to continue.\n'
+    
+    # validate email input
+    if not validators.email(email):
+        err = err + '*InvalidEmail:*  your email ('+email+') is invalid. Please enter a valid email to continue.\n'   
+ 
+    
+    return {'SHEET_LINK':google_sheet_url,'EMAIL':email,'PASSWORD':password,'SERVER':server, 'ERR_CHNL':err_chnl, 'ERROR': err}
 
 # read json file
 def read_json_file(filepath):
@@ -109,14 +138,49 @@ def create_json_db(filepath):
 
 # writing new data to csv file     
 def local_csv(filepath, df_survey):
+    
     if os.path.isfile(filepath):
+       
+        df_csv = pd.read_csv(filepath, dtype= str) # read local csv 
+        df_surv = df_survey.astype(str).replace('nan','',regex=True) # format survey fields data types to string
+        # append new data
         print('\nAPPENDING NEW DATA:')
-        df_0 = pd.read_csv(filepath)
-        # append unique data
-        df_ = pd.concat([df_0, df_survey]).drop_duplicates(subset = ['KEY'], keep = 'first')[list(df_survey)]
-        df_str = df_.astype(str).replace('nan','',regex=True)
-        df_str.to_csv(filepath, index= False)
+        df_data = pd.concat([df_csv, df_surv ], sort= False).drop_duplicates(subset = ['KEY'], keep = 'first')#[list(df_survey)]
+        print('\nAPPENDED NEW DATA:')
+        print("\nDATA\n\n")
+        df_data.to_csv(filepath, index= False) # write to csv
     else:
         print('\nWRITING NEW DATA:')
-        df_str = df_survey.astype(str).replace('nan','',regex=True)
-        df_str.to_csv(filepath, index= False)
+        df_data = df_survey.astype(str).replace('nan','',regex=True) # format survey fields data types to string
+        df_data.to_csv(filepath, index= False) # write to csv
+    
+    df_data = df_data.replace("None","")
+    return df_data
+
+
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from email.header import Header 
+
+
+def send_email(fromEmail,toEmail, subject,text, fromPass, smptpServer):
+    
+    msg = MIMEMultipart()
+    msg['From'] = str(Header("WhatsApp Marketing <%s>" %(fromEmail)))
+    msg['To'] = toEmail
+    msg['Subject'] = subject
+    TEXT = MIMEText(text, 'plain')
+
+    # Attach parts into message container.
+    # According to RFC 2046, the last part of a multipart message, in this case
+    # the HTML message, is best and preferred.
+    msg.attach(TEXT)
+
+
+    server = smtplib.SMTP(smptpServer,587)
+    server.starttls()
+    server.login(fromEmail, fromPass) 
+
+    server.sendmail(fromEmail,toEmail,msg.as_string())
+    server.quit()

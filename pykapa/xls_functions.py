@@ -4,7 +4,11 @@ import uuid as UUID
 
 # check if the selected field is equal to the expected value
 def selected(field,value):
-    if str(value) in field.split(' '):
+    sel = str(field).split(" ")
+    print('Selected: %s'%sel)
+    print('Value: %s' %value )
+    
+    if str(value) in sel:
         return True
     else:
         return False
@@ -207,15 +211,13 @@ def balanced_par(myStr):
 
 # get a function from string
 def get_func(string, func):
-        
-        f_idx   = string.index(func) # index of the function
-        new_str = string[f_idx+len(func) : ] # new short string
-        char_i = 0 # initialize char counter
-        open_list = ["[","{","("]
-        
-        
-        # iterate through the string to find the function
-        if new_str[0] in open_list:   
+    f_idx   = string.index(func) # index of the function
+    new_str = string[f_idx+len(func) : ] # new short string
+    char_i = 0 # initialize char counter
+    open_list = ["[","{","("]
+    
+    try:
+        if new_str[0] in open_list: 
             for char in new_str:
                 char_i +=1
                 # check if there are balanced parantheses
@@ -223,10 +225,19 @@ def get_func(string, func):
                 if bal_par == True:
                     func_0 = concat(func,new_str[0:char_i])
                     return func_0
+        
+        
+    except Exception as err:
+        print(err)
+        return None
+                
                  
 
 # eval functions in string               
-def evalfunc_str(string,df_xls,funcs = ['jr_choice_name','date_check','count_selected','is_number','now', 'today','format_date_time','date_time','date','string','number','IF', 'regex','coalesce','substr','concat','count_selected','selected_at','string_length','selected','uuid','round','int']):
+def evalfunc_str(string,df_xls,funcs = ['jr_choice_name','date_check','count_selected','is_number','now', 
+                                        'today','format_date_time','date_time','date','string','number','IF', 'regex',
+                                        'coalesce','substr','concat','count_selected','selected_at','string_length',
+                                        'selected','uuid','round','int']):
     nan = 'nan'
     for func in funcs:
         #print('evalFuncStr: ',string)
@@ -236,14 +247,16 @@ def evalfunc_str(string,df_xls,funcs = ['jr_choice_name','date_check','count_sel
                 
                 
                 if func in string:
+                    
                     func_str = get_func(string, func)
+                    
                 else:
                     func_str = None
 
                 if func_str != None:
                     try:
                         result = eval(func_str) # evaluate function
-                        string= string.replace(func_str, result) # replace function with the evluated result
+                        string= string.replace(func_str, str(result)) # replace function with the evluated result
                         
                         #print('Function: %s Result: %s'%(func_str, result))
                     

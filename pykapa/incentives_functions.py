@@ -1,5 +1,5 @@
 import requests
-from xls_functions import concat, format_date_time, evalfunc_str, is_in, now, uuid
+from xls_functions import is_number, concat, format_date_time, evalfunc_str, is_in, now, uuid
 import json
 import requests
 import time
@@ -78,7 +78,14 @@ def sim_control_networks(api_key):
 # format contact for simcontrol
 def simcontact(msisdn):
     msisdn = str(msisdn)
-
+    #print('\nMSISDN: %s'%msisdn)
+    
+    if is_number(msisdn):
+        msisdn = str(int(float(msisdn)))
+        #print('\nMSISDN: %s'%msisdn)
+    
+    
+    
     if len(msisdn)==11 and '.' in msisdn and msisdn.index('.')==9:
         idx = msisdn.index('.')
         sub_1 = msisdn[0:9]
@@ -93,7 +100,7 @@ def simcontact(msisdn):
         return concat('+',contact)
     
     elif len(contact)== 9 and contact[0]!= '0':
-        return concat('0', contact)
+        return concat('+27', contact)
         
     else:
         return concat(msisdn,' is not recognised as a South African mobile number.')
@@ -136,6 +143,7 @@ def airtime(api_key, msisdn, network, amount, ref=None):
         string = concat('mutation { rechargeSim(msisdn: \"',simcontact(msisdn),'\", networkId: \"',mno_id,'\", airtimeAmount:',amount,', reference: \"',ref, '\") { rechargeId message}}')
         recharge = api_query(string,api_key) # perform api_query
         
+        print('\nAIRTIME REQ: \n%s'%recharge)
         # c. request recharge data
         data_recharge = [recharge_data(reference=ref,api_key=api_key)] # get metadata data of recharge 
     
@@ -334,6 +342,7 @@ def smsProducts(bundleSize, df):
             return row[['bundleSize','price','label','id']]
         else:
             return close_row[['bundleSize','productType','price','label','id']]   
+
 # Buy DATA or SMS bundles
 def buyProd(api_key, msisdn, network, prodID, ref= None):
     if ref == None:
@@ -361,8 +370,10 @@ def rechargeSim(api_key, msisdn, network, prodType, bundleSize=None, price = 1, 
         ref = str(uuid())
         
     prodType = prodType.upper()
+    
     if prodType == 'AIRTIME':
         resp = airtime(api_key = api_key, msisdn = msisdn, network = network, amount = price, ref=ref)
+        print('AIRTIME RESP: \n%s'%resp)
         return resp
         
     else:
