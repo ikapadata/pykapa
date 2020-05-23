@@ -1,5 +1,6 @@
 from pykapa.quality_functions import surveyCTO_download, qc_fields, qc_messenger, save_corrections
 from pykapa.controllers.slack import slack_post
+from pykapa.models import User
 from pykapa.controllers.google_sheets import open_google_sheet, dct_xls_data
 from pykapa.settings.logging import logger
 from pykapa.settings.config import config_paths, user_inputs
@@ -29,7 +30,8 @@ slack_client = PykapaSlackClient(slack_token, err_chnl)
 #    2.                                              Quality Control
 # --------------------------------------------------------------------------------------------------------------------
 
-def find_latest_survey_recorded():
+
+def find_latest_survey_recorded(form_id):
     # find the last save for current data task (currently saved in json file)
     date_old = None
     # read json tracker
@@ -54,8 +56,8 @@ if google_sheet_url != '' and scto_username != '' and scto_password != '' and se
         logger.info('Pykapa has started tracking your data and will send alerts to your specified messenger app.')
 
         while True:
-
-            dct_xls = dct_xls_data(google_sheet_url, slack_client)  # process google sheet and return dictionary
+            # process google sheet and return dictionary
+            dct_xls = dct_xls_data(google_sheet_url, slack_client)
 
             if "error" in list(dct_xls):
                 err_msg = dct_xls['message']
@@ -82,7 +84,7 @@ if google_sheet_url != '' and scto_username != '' and scto_password != '' and se
 
                             if not df_survey.empty and list(df_survey) != ['error']:
 
-                                date_old = find_latest_survey_recorded()
+                                date_old = find_latest_survey_recorded(form_id)
 
                                 df_survey['CompletionDate'] = pd.to_datetime(df_survey['CompletionDate'])
 

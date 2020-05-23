@@ -16,6 +16,8 @@ def read_json_file(filepath):
             json_file == json_file
     return json_file    
 
+
+
 # write to json file
 def write_to_json(filepath, data):
     if os.path.isfile(filepath) == True:

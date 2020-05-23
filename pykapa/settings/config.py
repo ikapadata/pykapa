@@ -7,6 +7,12 @@ import os
 BASEPATH = os.path.dirname(pykapa.__file__)
 
 
+def get_test_path_for_filename(name):
+    config_path = os.path.join(BASEPATH, 'tests', name)
+    logger.info(config_path)
+    return config_path
+
+
 def get_config_path_for_filename(name):
     config_path = os.path.join(BASEPATH, 'config', name+".yaml")
     logger.info(config_path)

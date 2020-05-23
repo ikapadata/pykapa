@@ -8,6 +8,7 @@ node_modules/
 *.json
 minikube/
 pykapa.db
+zsh.zsh
 
 # C extensions
 *.so

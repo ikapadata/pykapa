@@ -10,6 +10,7 @@ from pykapa.controllers.slack import slack_post
 from pykapa.incentives_functions import *
 from pykapa.xls_functions import *
 import pandas as pd
+from requests.auth import HTTPDigestAuth, HTTPBasicAuth
 
 
 # --------------------------------------------------------------------------------------------------------------------------------
@@ -95,7 +96,7 @@ def surveyCTO_response(server, username, password, form_id):
 
     # download json file from surveyCTO
     print('\nRequesting data from surveyCTO')
-    resp = requests.get(file_url, auth=BasicAuth(username, password))
+    resp = requests.get(file_url, auth=HTTPBasicAuth(username, password))
 
     return resp
 
@@ -104,8 +105,6 @@ def surveyCTO_response(server, username, password, form_id):
 def surveyCTO_download(server, username, password, form_id, err_chnl=None):
     resp = surveyCTO_response(server, username, password, form_id)
 
-    import pdb
-    pdb.set_trace()
     status = resp.status_code
     print(status)
     try:
