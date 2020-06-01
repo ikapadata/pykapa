@@ -349,15 +349,15 @@ def save_latest_survey_date(tdate, key,  directory):
 
 
 # quality contorl and messenger (populate xls control variables with data from surveyCTO)
-def qc_messenger(df_survey, dct_xls, qc_track, admin_channel=None, google_sheet_url=None, duplicate_key=''):
+def qc_messenger(df_survey, dct_xls, admin_channel=None, google_sheet_url=None, duplicate_key=''):
     form_id = dct_xls['form_id']
     dirX = make_relative_dir('data', 'projects', form_id, 'qctrack.json')
 
     if df_survey.empty is False and list(df_survey) != ['error']:
 
         print('\nQC STARTED')
-        df_select = dct_xls['select']
-        df_choices = dct_xls['choices']
+        # df_select = dct_xls['select']
+        # df_choices = dct_xls['choices']
 
         print('recs: %s\n' % (len(df_survey)))
 
@@ -385,8 +385,7 @@ def qc_messenger(df_survey, dct_xls, qc_track, admin_channel=None, google_sheet_
 
                     # determine column type
                     try:
-                        colType = dct_xls['select'].loc[
-                            dct_xls['select'][dct_xls['select'].name == col].index.values[0], 'type']
+                        colType = dct_xls['select'].loc[ dct_xls['select'][dct_xls['select'].name == col].index.values[0], 'type']
                     except:
                         colType = None
 

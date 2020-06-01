@@ -3,7 +3,7 @@ from pykapa.controllers.slack import slack_post
 from pykapa.models import User
 from pykapa.controllers.google_sheets import open_google_sheet, dct_xls_data
 from pykapa.settings.logging import logger
-from pykapa.settings.config import config_paths, user_inputs
+from pykapa.settings.config import config_paths, setup_config_for_project, Config
 from pykapa.gen_funcs import read_json_file, append_to_csv
 from pykapa.controllers.slack import PykapaSlackClient
 from pykapa.drop_box import to_dropbox
@@ -14,17 +14,10 @@ import time
 # --------------------------------------------------------------------------------------------------------------------
 #    1.                                              User Inputs
 # --------------------------------------------------------------------------------------------------------------------
-# take user inputs
-config_name, config = user_inputs()
+config: Config = setup_config_for_project()
 
-google_sheet_url = config['google']['sheet_url']
-scto_username = config['scto']['username']
-scto_password = config['scto']['password']
-server = config['scto']['host']
-err_chnl = config['slack']['error_channel']
-slack_token = config['slack']['token']
+slack_client = PykapaSlackClient(config.slack_token, config.slack_error_channel)
 
-slack_client = PykapaSlackClient(slack_token, err_chnl)
 
 # --------------------------------------------------------------------------------------------------------------------
 #    2.                                              Quality Control
@@ -51,83 +44,80 @@ def get_csv_path_for_form(form_id):
     return csv_path
 
 
-if google_sheet_url != '' and scto_username != '' and scto_password != '' and server != '':
+logger.info('Pykapa has started tracking your data and will send alerts to your specified messenger app.')
+while True:
+    # process google sheet and return dictionary
+    dct_xls = dct_xls_data(config, slack_client)
 
-        logger.info('Pykapa has started tracking your data and will send alerts to your specified messenger app.')
+    if "error" in list(dct_xls):
+        err_msg = dct_xls['message']
 
-        while True:
-            # process google sheet and return dictionary
-            dct_xls = dct_xls_data(google_sheet_url, slack_client)
+        if "error" in err_msg:
+            dct_xls = None
+        else:
+            break
 
-            if "error" in list(dct_xls):
-                err_msg = dct_xls['message']
+    else:
 
-                if "error" in err_msg:
-                    dct_xls = None
-                else:
-                    break
+        try:
+            if dct_xls is not None:
 
-            else:
+                form_id = dct_xls['form_id']
+                df_msg = dct_xls['messages']
+                csv_path = get_csv_path_for_form(form_id)
 
-                try:
-                    if dct_xls is not None:
+                # Download data from surveyCTO
+                # retrieve data from surveyCTO as dataframe
+                df_survey = surveyCTO_download(config.scto_host, config.scto_username, config.scto_password, form_id, config.slack_error_channel)
 
-                        form_id = dct_xls['form_id']
-                        df_msg = dct_xls['messages']
-                        csv_path = get_csv_path_for_form(form_id)
+                if df_survey is not None:
 
-                        # Download data from surveyCTO
-                        # retrieve data from surveyCTO as dataframe
-                        df_survey = surveyCTO_download(server, scto_username, scto_password, form_id, err_chnl)
+                    if not df_survey.empty and list(df_survey) != ['error']:
 
-                        if df_survey is not None:
+                        date_old = find_latest_survey_recorded(form_id)
 
-                            if not df_survey.empty and list(df_survey) != ['error']:
+                        df_survey['CompletionDate'] = pd.to_datetime(df_survey['CompletionDate'])
 
-                                date_old = find_latest_survey_recorded(form_id)
+                        df_survey = df_survey[df_survey.CompletionDate > date_old]
 
-                                df_survey['CompletionDate'] = pd.to_datetime(df_survey['CompletionDate'])
+                        append_to_csv(csv_path, df_survey)
 
-                                df_survey = df_survey[df_survey.CompletionDate > date_old]
-
-                                append_to_csv(csv_path, df_survey)
-
-                                # extract columns relevant to qc messages
-                                cols = qc_fields(dct_xls)
-                                svy_cols = list(set(list(df_survey)).intersection(set(cols)))
-
-                                try:
-                                    df_surv = df_survey[svy_cols]
-                                except Exception as err:
-                                    slack_msg = '`Google Sheet Error:(Incorrect Variable)`\n' + str(err)
-                                    logger.info(slack_msg)
-                                    slack_post(err_chnl, slack_msg)
-                                    break
-
-                                # perform quality control and post messages on slack
-                                # perform quality control, post messages, and send incentives
-                                qc_messenger(df_surv, dct_xls, qc_track, err_chnl, google_sheet_url)
-
-                        else:
-                            logger.info('surveyCTO data set is unrecognized.')
-                            break
-
-                        # Perform Corrections and backup file on Dropbox
-                        gsheet = open_google_sheet(google_sheet_url)
-                        save_corrections(gsheet, csv_path, form_id)  # perform corrections and save file
-                        to_dropbox(gsheet, form_id)  # upload files local datasets to dropbox
+                        # extract columns relevant to qc messages
+                        cols = qc_fields(dct_xls)
+                        svy_cols = list(set(list(df_survey)).intersection(set(cols)))
 
                         try:
-                            df_xpt = dct_xls['export']
-                            # read survey worksheet
-                            df_svy = dct_xls['select']
+                            df_surv = df_survey[svy_cols]
                         except Exception as err:
-                            print('\nExport Worksheet Exception: %s' %err)
+                            slack_msg = '`Google Sheet Error:(Incorrect Variable)`\n' + str(err)
+                            logger.info(slack_msg)
+                            slack_post(config.slack_error_channel, slack_msg)
+                            break
 
+                        # perform quality control and post messages on slack
+                        # perform quality control, post messages, and send incentives
+                        qc_messenger(df_surv, dct_xls, config.slack_error_channel, config.google_sheet_url)
+
+                else:
+                    logger.info('surveyCTO data set is unrecognized.')
+                    break
+
+                # Perform Corrections and backup file on Dropbox
+                gsheet = open_google_sheet(config.google_sheet_url)
+                save_corrections(gsheet, csv_path, form_id)  # perform corrections and save file
+                to_dropbox(gsheet, form_id)  # upload files local datasets to dropbox
+
+                try:
+                    df_xpt = dct_xls['export']
+                    # read survey worksheet
+                    # df_svy = dct_xls['select']
                 except Exception as err:
-                    err_msg = '`Warning:` \n%s. \n\nYou may have to follow up on this. The backend is still running' % err
-                    logger.info(err_msg)
-                    slack_post(err_chnl, err_msg)
+                    print('\nExport Worksheet Exception: %s' %err)
 
-            logger.info('The End %s' % now())
-            time.sleep(600)
+        except Exception as err:
+            err_msg = '`Warning:` \n%s. \n\nYou may have to follow up on this. The backend is still running' % err
+            logger.info(err_msg)
+            slack_post(config.slack_error_channel, err_msg)
+
+    logger.info('The End %s' % now())
+    time.sleep(600)

@@ -3,6 +3,7 @@ slack:
   error_channel: errors_channel_name
 google:
   sheet_url: url
+  credentials: credentials.json
 scto:
   username: email
   password: password

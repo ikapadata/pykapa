@@ -12,6 +12,7 @@ from pykapa.gen_funcs import make_relative_dir
 from pykapa.incentives_functions import *
 from pykapa.controllers.slack import slack_post, PykapaSlackClient
 from pykapa.xls_functions import *
+from pykapa.settings.config import PROJECTNAME_ENV_KEY, Config
 import pandas as pd
 
 
@@ -105,43 +106,7 @@ def xls2py(dataframe):
     return dataframe
 
 
-def read_messages_worksheet(google_sheet):
-    try:
-        ws_msg = google_sheet.worksheet('messages')  # Open the worksheet named messages
-        ws_msgset = google_sheet.worksheet('messages_settings')  # Open the worksheet named messages_settings
 
-        df_msg_xls = get_as_dataframe(ws_msg).dropna(how='all')
-        df_msg_xls = df_msg_xls.dropna(subset=['channel_id'])
-
-        df_msgset_xls = get_as_dataframe(ws_msgset).dropna(how='all')
-
-        # merge data from two worksheets according to channel_id into one dataframe
-        df_msg = xls2py(xls_merge_ws(df_msg_xls, df_msgset_xls))
-
-        for idx in df_msg.index.values:
-            df_msg.loc[idx, 'message_relevance'] = df_msg.loc[idx, 'message_relevance'].replace("''", str(np.NaN))
-            df_msg.loc[idx, 'message_relevance'] = df_msg.loc[idx, 'message_relevance'].replace('""', str(np.NaN))
-
-    except Exception as err:
-        err_msg = {"error": "Reading Worsheets", "message": str(err), "code": 'ERR-GS-WSMSG'}
-        logger.exception("Could not read messages worksheet")
-        slack_post(err_chnl, err_msg)
-        return err_msg
-    return df_msg
-
-
-def get_incentives(google_sheet):
-    # a(ii) read incentives_settings worksheet
-    try:
-        # Open the worksheet named incentives_settings
-        ws_incentives = google_sheet.worksheet('incentives_settings')
-        df_incentives_xls = get_as_dataframe(ws_incentives).dropna(how='all')
-        # convert xls syntax to python syntax
-        df_incentive = xls2py(df_incentives_xls)
-    except:
-        logger.exception("Could not retrieve google sheet incentives")
-        df_incentive = None
-    return df_incentive
 
 
 def open_google_sheet(google_sheet_url):
@@ -163,92 +128,144 @@ def open_google_sheet(google_sheet_url):
     return google_sheet
 
 
-# temp pass in slack client until we move to a class here TODO: Move to class
-def dct_xls_data(google_sheet_url, slack_client: PykapaSlackClient):
+class StorageController:
+
+    def __init__(self, base_dir):
+        self.base_dir = base_dir
+        self.data_path = self.make_relative_path(["data"])
+        self.google_oauth_path = self.make_relative_path(self.base_dir, ["data", "authentication", "google", "token.json"])
+
+    @staticmethod
+    def make_relative_path(base_dir, relative_to_base: list):
+        abs_file_path = os.path.join(base_dir, *relative_to_base)
+        return abs_file_path
+
+
+class GoogleSheetController():
+
+    def __init__(self, slack_client: PykapaSlackClient, config: Config):
+        self.config = config
+        self.slack_client = slack_client
+        self.scope = 'https://www.googleapis.com/auth/spreadsheets'
+        self.sheet = None
+
+    def open(self):
+        self.sheet = self.open_sheet()
+
+    def open_sheet(self):
+        try:
+            store = file.Storage(self.config.google_credentials)
+            creds = store.get()
+            if not creds or creds.invalid:
+                flow = client.flow_from_clientsecrets(self.config.google_credentials, self.scope)
+                creds = tools.run_flow(flow, store)
+            gc = gspread.authorize(creds)
+            google_sheet = gc.open_by_url(self.config.google_sheet_url)
+            return google_sheet
+
+        except Exception as err:
+            err_msg = {"error": "Opening Google Sheet", "message": str(err), "code": 'ERR-GS-OPN'}
+            logger.info(err_msg)
+            self.slack_client.post_error(err_msg)
+            raise
+
+
+class PykapaGoogleSheetController(GoogleSheetController):
+
+    def __init__(self, slack_client, config: Config):
+        super().__init__(slack_client, config)
+        self.open_sheet()
+        self.survey = self.get_survey(self.sheet.worksheet('survey'))
+        self.choices = self.rename_choices(self.sheet.worksheet('choices'))
+        self.settings = self.as_dataframe(self.sheet.worksheet('settings'))
+        self.incentives = self.get_incentives(self.sheet('incentives_settings'))
+        self.messages = self.read_messages_worksheet_with_merge(self.sheet.worksheet('messages'), self.sheet.worksheet("messages_settings"))
+
+    def as_dataframe(self, wsheet):
+        return get_as_dataframe(wsheet).dropna(how='all')
+
+    def rename_choices(self, wsheet):
+        df_choices = self.as_dataframe(wsheet)
+        new_header = {}
+        for header in df_choices.columns:
+            new_header[header] = 'choice_' + header
+        df_choices.rename(columns=new_header, inplace=True)  # rename headers
+        return df_choices
+
+    def get_survey(self, wsheet):
+        df_svy = self.as_dataframe(wsheet)
+        for i in df_svy.index.values:
+            vec = df_svy.loc[i, 'type'].split()  # form vector of strings
+            df_svy.loc[i, 'type'] = vec[0]  # assign first string in vector to type
+            if len(vec) != 1:
+                df_svy.loc[i, 'list_name'] = vec[1]  # assign second string to list_name
+        return df_svy
+
+    def get_incentives(self, wsheet):
+        try:
+            df_incentives_xls = self.as_dataframe(wsheet)
+            df_incentive = xls2py(df_incentives_xls)
+        except:
+            logger.exception("Could not retrieve google sheet incentives")
+            self.slack_client.post_error("Could not retrieve incentives")
+            df_incentive = None
+        return df_incentive
+
+    def read_messages_worksheet_with_merge(self, messages, message_settings):
+        try:
+            df_msg_xls = self.as_dataframe(messages).dropna(subset=['channel_id'])
+            df_msgset_xls = self.as_dataframe(message_settings)
+
+            # merge data from two worksheets according to channel_id into one dataframe
+            df_msg = xls2py(xls_merge_ws(df_msg_xls, df_msgset_xls))
+
+            for idx in df_msg.index.values:
+                df_msg.loc[idx, 'message_relevance'] = df_msg.loc[idx, 'message_relevance'].replace("''", str(np.NaN))
+                df_msg.loc[idx, 'message_relevance'] = df_msg.loc[idx, 'message_relevance'].replace('""', str(np.NaN))
+
+        except Exception as err:
+            err_msg = {"error": "Reading Worsheets", "message": str(err), "code": 'ERR-GS-WSMSG'}
+            logger.exception("Could not read messages worksheet")
+            self.slack_client.post_error(err_msg)
+            return None
+        return df_msg
+
+    def make_select(self):
+        sel_cols = ['type', 'list_name', 'name', 'dashboard_state']
+        try:
+            df_select = self.survey[sel_cols]
+        except:
+            df_select = self.survey[sel_cols[0:3]]
+        return df_select
+
+    def make_dashboard(self, select):
+        try:
+            df_sel = select.dropna(subset=['dashboard_state']).astype(str)
+            db_sel = df_sel[(df_sel['dashboard_state'] == 'TRUE') | (df_sel['dashboard_state'] == 'True') | ( df_sel['dashboard_state'] == '1.0')]  # dashboard dataframe
+
+            df_msg1 = self.messages.dropna(subset=['dashboard_state']).astype(str)
+            db_msg = df_msg1[(df_msg1['dashboard_state'] == 'True') | (df_msg1['dashboard_state'] == 'TRUE') | ( df_msg1['dashboard_state'] == '1.0') | ( df_msg1['dashboard_state'] == 'DUPLICATE')]  # dashboard dataframe
+
+            db_head = list(dict.fromkeys(list(db_msg['name']) + list(db_sel['name'])))
+        except Exception as err:
+            logger.info('ERROR: ', err)
+            db_head = None
+
+        # create dashboard dataframe and create worksheet
+        if db_head is not None:
+            dashboard = pd.DataFrame(columns=db_head)
+        else:
+            dashboard = None
+
+        return dashboard
+
+
+def dct_xls_data(config, slack_client: PykapaSlackClient):
     logger.info("\nReading Google Sheet...")
-    # 1. open worksheets in google sheet
-    try:
-        google_sheet = open_google_sheet(google_sheet_url)  # Open google sheet
-    except Exception as err:
-
-        err_msg = {"error": "Opening Google Sheet", "message": str(err), "code": 'ERR-GS-OPN'}
-        logger.info(err_msg)
-        slack_client.post_error(err_msg)
-        # slack_post(config_name, err_msg)
-        return err_msg
-
-    # read compuslory sheets
-    try:
-        ws_svy = google_sheet.worksheet('survey')  # Open the worksheet named survey
-        ws_choices = google_sheet.worksheet('choices')  # Open the worksheet named choices
-        ws_set = google_sheet.worksheet('settings')  # Open the worksheet named settings
-
-        df_svy = get_as_dataframe(ws_svy).dropna(how='all')
-        df_choices = get_as_dataframe(ws_choices).dropna(how='all')
-        df_set_xls = get_as_dataframe(ws_set).dropna(how='all')
-
-    except Exception as err:
-
-        err_msg = {"error": "Reading Worsheets", "message": str(err), "code": 'ERR-GS-WSCOMP'}
-        logger.exception("Could not read compulsory sheets")
-        slack_client.post_error(err_msg)
-        return err_msg
-
-    df_incentives = get_incentives(google_sheet)
-
-    # a(i) read messages and messages_settings worksheets
-
-    df_msg = read_messages_worksheet(google_sheet)
-
-        # 3. Rename choices header
-    old_header = df_choices.columns  # list of old headers
-    new_header = {}  # empty dictionary
-    for header in old_header:
-        new_header[header] = 'choice_' + header  # append 'choice_' to the old header
-    df_choices.rename(columns=new_header, inplace=True)  # rename headers
-
-    # 4. split type into two variables (type and list_name)
-    # df_svy = df_svy.replace(np.NaN, str(np.NaN)) # convert NaN from integer to string, i.e NaN to nan
-    # a. add new column (list_name)
-    # df_svy['list_name'] = np.NaN
-
-    # b. assign type to list_name
-    for i in df_svy.index.values:
-        vec = df_svy.loc[i, 'type'].split()  # form vector of strings
-        df_svy.loc[i, 'type'] = vec[0]  # assign first string in vector to type
-        if len(vec) != 1:
-            df_svy.loc[i, 'list_name'] = vec[1]  # assign second string to list_name
-
-    # create dataframe  to reference types and dashboard state
-    sel_cols = ['type', 'list_name', 'name', 'dashboard_state']
-    try:
-        df_select = df_svy[sel_cols]
-    except:
-        df_select = df_svy[sel_cols[0:3]]
-
-    # 5. obtain form_id of worksheet
-    form_id = df_set_xls.loc[0, 'form_id']
-
-    # create dashboard header
-    try:
-        df_sel = df_select.dropna(subset=['dashboard_state']).astype(str)
-        db_sel = df_sel[(df_sel['dashboard_state'] == 'TRUE') | (df_sel['dashboard_state'] == 'True') | (
-                df_sel['dashboard_state'] == '1.0')]  # dashboard dataframe
-        df_msg1 = df_msg.dropna(subset=['dashboard_state']).astype(str)
-        db_msg = df_msg1[(df_msg1['dashboard_state'] == 'True') | (df_msg1['dashboard_state'] == 'TRUE') | (
-                df_msg1['dashboard_state'] == '1.0') | (
-                                 df_msg1['dashboard_state'] == 'DUPLICATE')]  # dashboard dataframe
-
-        db_head = list(dict.fromkeys(list(db_msg['name']) + list(db_sel['name'])))
-    except Exception as err:
-        logger.info('ERROR: ', err)
-        db_head = None
-
-    # create dashboard dataframe and create worksheet
-    if db_head is not None:
-        db = pd.DataFrame(columns=db_head)
-    else:
-        db = None
-
-    return {'messages': df_msg, 'incentives': df_incentives, 'form_id': form_id, 'select': df_select,
-            'choices': df_choices, 'dashboard': db}
+    sheet = PykapaGoogleSheetController(slack_client, config)
+    df_select = sheet.make_select()
+    dashboard = sheet.make_dashboard(df_select)
+    form_id = sheet.settings.loc[0, 'form_id']
+    return {'messages': sheet.messages, 'incentives': sheet.incentives,
+            'form_id': form_id, 'select': df_select,
+            'choices': sheet.choices, 'dashboard': dashboard}

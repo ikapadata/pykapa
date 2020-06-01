@@ -9,6 +9,7 @@ node_modules/
 minikube/
 pykapa.db
 zsh.zsh
+pkdata/
 
 # C extensions
 *.so
