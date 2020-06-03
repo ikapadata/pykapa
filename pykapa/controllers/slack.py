@@ -5,6 +5,15 @@ from pykapa.settings.config import load_config_file
 
 
 class PykapaSlackClient(slackclient.SlackClient):
+    """
+    The SlackClient makes API Calls to the `Slack Web API <https://api.slack.com/web>`_ as well as
+    managing connections to the `Real-time Messaging API via websocket <https://api.slack.com/rtm>`_
+
+    It also manages some of the Client state for Channels that the associated token (User or Bot)
+    is associated with.
+
+    For more information, check out the `Slack API Docs <https://api.slack.com/>`_
+    """
 
     def __init__(self, token, error_channel):
         # config = load_config_file(config_filename)

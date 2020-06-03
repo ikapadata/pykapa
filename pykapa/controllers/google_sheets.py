@@ -239,6 +239,11 @@ class PykapaGoogleSheetController(GoogleSheetController):
         return df_select
 
     def make_dashboard(self, select):
+        '''
+
+        :param select:  Fun
+        :return:
+        '''
         try:
             df_sel = select.dropna(subset=['dashboard_state']).astype(str)
             db_sel = df_sel[(df_sel['dashboard_state'] == 'TRUE') | (df_sel['dashboard_state'] == 'True') | ( df_sel['dashboard_state'] == '1.0')]  # dashboard dataframe

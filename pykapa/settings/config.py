@@ -41,7 +41,8 @@ def save_config_to_file(config, name):
     return data
 
 
-# config_paths = load_config_file('paths')
+# TODO: Remove this requirement (or commit to extended csv support)
+config_paths = load_config_file('paths')
 
 
 def build_config_from_input():

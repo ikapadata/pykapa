@@ -8,6 +8,10 @@ from pykapa.incentives_functions import *
 
 
 class SurveyCTOContoller():
+    """
+    SurveyCTO Controller
+
+    """
 
     def __init__(self, domain, form_id, username, password, session, date_format="%b %d, %Y %I:%M:%S %p"):
         self.domain = domain
