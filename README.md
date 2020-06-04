@@ -1,14 +1,14 @@
 # Pykapa Overview
 
 
-This a free and open source python script to monitor, manage, and clean collected data. It is intended to provide (a) affordable quality assurance tools in resource-constrained environments and (b) lower the barrier of programming level needed for automating workflows. Google Sheets is used as the primary programming interface, so the minimum requirements are knowledge of Google Sheets formulas and XLS forms. An added bonus is the transparency offered by posting quality issues associated with data and progress reports on Slack. Therefore, all stakeholders are able to monitor, track and follow up on issues in real time. A user only needs to provide their [slack bot token](https://slack.dev/node-slack-sdk/tutorials/local-development). If incentives are associated with the research, then airtime, SMS or data bundle incentives are awarded to respondents.  
+This a free and open source python script to monitor, manage, and clean collected data. It is intended to provide (a) affordable quality assurance tools in resource-constrained environments and (b) lower the barrier of programming level needed for automating workflows. Google Sheets is used as the primary programming interface, so the minimum requirements are knowledge of Google Sheets formulas and XLS forms. An added bonus is the transparency offered by posting quality issues associated with data and progress reports on Slack. Therefore, all stakeholders are able to monitor, track and follow up on issues in real time. A user only needs to provide their [slack bot token](https://slack.dev/node-slack-sdk/tutorials/local-development). If incentives are associated with the research, then airtime, SMS or data bundle incentives are awarded to respondents.
 ### Tools
 - [Google Sheets](https://docs.google.com) *[Free]* - create survey, set quality control and incentive parameters, edit and clean data.
 - [Slack](https://slack.com) *[Free]* - post quality control issues and progress reports, transparent and effective communication and collaboration between stakeholders.
 - [Data Studio](https://datastudio.google.com) *[Free]* - data visualisation.
 - [Dropbox](http://dropbox.com) *(Optional)[Free]* - online backup of collected and clean data.
 - [surveyCTO](https://www.surveycto.com) *(Optional)[Paid]* - Android application, data collection, storage and security.
-- [SimControl](https://new.simcontrol.co.za/) or [flickswitch](https://www.flickswitch.co.za) *(Optional) [Paid]* - Airtime, SMS and Data bundles distribution. 
+- [SimControl](https://new.simcontrol.co.za/) or [flickswitch](https://www.flickswitch.co.za) *(Optional) [Paid]* - Airtime, SMS and Data bundles distribution.
 
 
 If you have your own server instead of surveyCTO, where the data is stored to and secured in real time, provide a csv link to the data. However, ensure that there are **CompletionDate** and **KEY** column names for the storage timestamp and submission id respectively.
@@ -38,7 +38,7 @@ In this worksheet you assign headers and slack channels for messages to to be po
 Create the following sheets only if you will use them.
 
 ### [corrections](https://docs.google.com/spreadsheets/d/1_DcvojpHzpZixOts6BApy0neiqtwjJkhVdMBqJVucgM/edit#gid=937346004)
-This worksheet allows you to clean data by correcting mistakes made during data collection. You can correct multiple field-values per row. It is limited to `replace` and `drop`, where you replace values or drop observations respectively. You have to create this worksheet and its columns. Create the **action**, **relevance**,	**correction**,	**comment** columns. 
+This worksheet allows you to clean data by correcting mistakes made during data collection. You can correct multiple field-values per row. It is limited to `replace` and `drop`, where you replace values or drop observations respectively. You have to create this worksheet and its columns. Create the **action**, **relevance**,	**correction**,	**comment** columns.
 
 ### [incentives_settings](https://docs.google.com/spreadsheets/d/1_DcvojpHzpZixOts6BApy0neiqtwjJkhVdMBqJVucgM/edit#gid=1255809361)
 This worksheet allows you incentivise respondents with airtime, data bundles or sms bundles. You have to create this worksheet and its columns. Create the **incentive_type**, **amount**, **contact**, **network**, **recharge_count**, **flickswitch_api_key**, and **messenger** columns.
@@ -47,7 +47,7 @@ This worksheet allows you incentivise respondents with airtime, data bundles or 
 This worksheet allows you to back your data on [Dropbox](http://dropbox.com). You have to create this worksheet and its columns. It consist of only two colums, **dropbox_dir** and **dropbox_token**. View [generate dropbox token](https://blogs.dropbox.com/developers/2014/05/generate-an-access-token-for-your-own-account/) to follow the instructions on how to obtain an access token.
 
 ## 1.3. **Programmatically Created Sheets**
-The following worksheets are created automatically when the program is running. You must not create any worksheet with the following names. 
+The following worksheets are created automatically when the program is running. You must not create any worksheet with the following names.
 
 ### [dashboard](https://docs.google.com/spreadsheets/d/1_DcvojpHzpZixOts6BApy0neiqtwjJkhVdMBqJVucgM/edit#gid=156439626)
 This worksheet is created automatically if the survey or messages worksheets have the **dashboard_state** column with TRUE values. You can then use the data in this worksheet to create dashboards using Data Studio. There are two limitations to note: (1) All data is written as strings and (2) the [ARRAYFORMULA()](https://support.google.com/docs/answer/3093275?hl=en-GB) breaks when new data is written on the sheet. To solve (1) add new columns to format the data to the correct data type and apply ARRAYFORMULA(). To solve (2) you will have to (a) copy and paste fucntion below in to the script editor and (b) add the onChange trigger for the function to clear the cells below the ARRAYFORMULA().
