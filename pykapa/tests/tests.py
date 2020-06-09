@@ -6,6 +6,7 @@ from pykapa.models import User
 from pykapa.controllers.files import load_file_to_dataframe, save_dataframe_to_file, save_dict_to_file, load_file_to_dict
 from pykapa.controllers.survey_cto import SurveyCTOContoller
 from pykapa.settings.config import get_test_path_for_filename
+from pykapa.qcMessenger import run_quality_control
 from pykapa.tests.base import PykapaTestCase
 from datetime import datetime
 import pandas as pd
@@ -64,6 +65,9 @@ class TestGenFuncs(PykapaTestCase):
         self.session.commit()
         scto.create_database_rows(data)
         assert scto.get_unprocessed_rows() == []
+
+    def test_qc(self):
+        run_quality_control()
 
 
 

@@ -2,7 +2,7 @@ slack:
   token: something
   error_channel: errors_channel_name
 google:
-  sheet_url: url
+  sheet_url: https://docs.google.com/spreadsheets/d/1_DcvojpHzpZixOts6BApy0neiqtwjJkhVdMBqJVucgM/edit#gid=1956562684
   credentials: credentials.json
 scto:
   username: email

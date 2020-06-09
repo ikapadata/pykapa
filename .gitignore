@@ -11,6 +11,8 @@ pykapa.db
 zsh.zsh
 pkdata/
 deploy/
+credentials.json
+test.db
 
 # C extensions
 *.so

@@ -11,13 +11,13 @@ from pykapa.xls_functions import date_time, now
 import pandas as pd
 import time
 
-if __name__ == '__main__':
+
+def run_quality_control():
     # --------------------------------------------------------------------------------------------------------------------
     #    1.                                              User Inputs
     # --------------------------------------------------------------------------------------------------------------------
     config: Config = setup_config_for_project()
     slack_client = PykapaSlackClient(config.slack_token, config.slack_error_channel)
-
 
     # --------------------------------------------------------------------------------------------------------------------
     #    2.                                              Quality Control
@@ -47,6 +47,8 @@ if __name__ == '__main__':
     logger.info('Pykapa has started tracking your data and will send alerts to your specified messenger app.')
     while True:
         # process google sheet and return dictionary
+        import pdb
+        pdb.set_trace()
         dct_xls = dct_xls_data(config, slack_client)
 
         if "error" in list(dct_xls):
@@ -121,3 +123,7 @@ if __name__ == '__main__':
 
         logger.info('The End %s' % now())
         time.sleep(600)
+
+
+if __name__ == '__main__':
+    run_quality_control()
